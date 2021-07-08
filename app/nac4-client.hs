@@ -2,33 +2,20 @@
 
 import NaC4.Client.Bot
 import NaC4.Protocol
+import NaC4.ProtocolImpl
 
 -- import Data.Aeson (decode, encode)
 import Data.Text as T
 import Network.Socket (withSocketsDo)
-import Network.WebSockets (ClientApp, runClient, sendClose, sendTextData,
-    receiveData)
+import qualified Network.WebSockets as WS
 
 main :: IO ()
-main = withSocketsDo $ runClient "127.0.0.1" 3000 "" clientApp
+main = withSocketsDo $ WS.runClient "127.0.0.1" 3000 "" clientApp
 
-clientApp :: ClientApp ()
+clientApp :: WS.ClientApp ()
 clientApp conn = do
     putStrLn "Connecting..."
-    sendTextData conn ("CONNECT" :: T.Text)
-    m <- receiveData conn
-    print (m :: T.Text)
-
-{-
-
-clientApp :: ClientApp ()
-clientApp conn = do
-    putStrLn "Connected!"
-    sendTextData conn (encode WsControlAsk)
-    m <- decode <$> receiveData conn
-    print (m :: Maybe Game)
-    _ <- getLine
-    sendClose conn ("Bye!" :: Text)
-
--}
+    WS.sendTextData conn ("CONNECT" :: T.Text)
+    msgFromServer <- parseProtocol . WS.fromLazyByteString <$> WS.receiveData conn
+    print msgFromServer
 

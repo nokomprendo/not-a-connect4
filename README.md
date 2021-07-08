@@ -59,4 +59,5 @@ s2c: endgame BOARD RESULT\n
 - connexion basique client-server WS
 - types pour le protocole
 - sérialisation protocole/game
+- serveur envoie un jeu et fin
 

@@ -37,8 +37,8 @@ library
                         NaC4.ProtocolImpl
                         NaC4.Client.Bot
                         NaC4.Server.HttpApp
+                        NaC4.Server.Model
                         NaC4.Server.WsApp
-                        NaC4.Server.WsManager
 
 executable nac4-client
     import:             deps

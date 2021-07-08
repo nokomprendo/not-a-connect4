@@ -3,33 +3,31 @@
 module NaC4.Server.WsApp  where
 
 import NaC4.Game
-import NaC4.Server.WsManager
+import NaC4.Protocol
+import NaC4.ProtocolImpl
+import NaC4.Server.Model
 
 import qualified Network.WebSockets as WS
 
+import Control.Concurrent.MVar
 import Control.Monad.ST
 import Data.Text as T
 import Network.Wai (Application)
 import Network.Wai.Handler.WebSockets (websocketsOr)
 
-data WsModel = WsModel
-    { wsManager :: WsManager WS.Connection
-    , wsTodo :: Int
-    } deriving Show
+wsApp :: MVar Model -> Application -> Application
+wsApp model = websocketsOr WS.defaultConnectionOptions (serverApp model)
 
-wsApp :: Application -> Application
-wsApp = websocketsOr WS.defaultConnectionOptions serverApp 
-
-serverApp ::WS.PendingConnection -> IO ()
-serverApp pc = do
+serverApp ::MVar Model -> WS.PendingConnection -> IO ()
+serverApp model pc = do
     conn <- WS.acceptRequest pc
-    msg <- WS.fromLazyByteString <$> WS.receiveData conn
-    case (msg :: T.Text) of
+    msgFromClient <- WS.fromLazyByteString <$> WS.receiveData conn
+    case (msgFromClient :: T.Text) of
         "CONNECT"  -> do
-            game <- stToIO (mkGame PlayerR)
-            putStrLn "received connect"
-
-            WS.sendTextData conn ("CONNECTED" :: T.Text)
+            putStrLn "received connect, sending game"
+            (b, c) <- (_game <$> readMVar model) >>= stToIO . fromGame
+            let msgToClient = fmtProtocol $ GenMove b c
+            WS.sendTextData conn msgToClient
         _ -> putStrLn "unknown query"
 
 
@@ -159,6 +157,42 @@ disconnectControl var iConn =
             mgr1 = rmConn iConn mgr0
             game1 = rmAgent iConn (wsGame wsmodel0)
         return wsmodel0 { wsGame = game1, wsControlMgr = mgr1 }
+
+-}
+
+
+
+{-
+
+module NaC4.Server.WsManager where
+
+-- TODO Data.Map.Strict ?
+
+data WsConn a = WsConn
+    { wsId :: Int
+    , wsConn :: a
+    }
+
+instance Eq (WsConn a) where
+    c1 == c2 = wsId c1 == wsId c2
+
+data WsManager a = WsManager
+    { wsNextId :: Int
+    , wsConns :: [WsConn a]
+    } deriving Eq
+
+instance Show (WsManager a) where
+    show (WsManager i cs) = "WsManager " ++ show i ++ " " ++ show (map wsId cs)
+
+newWsManager :: WsManager a
+newWsManager = WsManager 0 []
+
+addConn :: a -> WsManager a -> (Int, WsManager a)
+addConn conn (WsManager id0 cs) =
+    (id0, WsManager (1+id0) (WsConn id0 conn : cs))
+
+rmConn :: Int -> WsManager a -> WsManager a
+rmConn id0 mgr = mgr { wsConns = filter ((/=) id0 . wsId) (wsConns mgr) }
 
 -}
 

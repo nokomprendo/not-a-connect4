@@ -1,5 +1,6 @@
 
 import NaC4.Server.HttpApp
+import NaC4.Server.Model
 import NaC4.Server.WsApp
 
 import Control.Concurrent (newMVar, forkIO)
@@ -12,11 +13,11 @@ main :: IO ()
 main = do
     port <- read . fromMaybe "3000" <$> lookupEnv "PORT"
     putStrLn $ "listening port " ++ show port ++ "..."
-    -- wsModel <- newWsModel
-    -- wsModelVar <- newMVar wsModel
+    model <- newModel
+    modelVar <- newMVar model
     -- _ <- forkIO $ loopWsModel wsModelVar
     run port 
         $ logStdout 
-        $ wsApp -- wsModelVar
+        $ wsApp modelVar
         httpApp
 
