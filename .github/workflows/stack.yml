@@ -1,18 +1,14 @@
 on: [push, pull_request]
 jobs:
-  stack:
+  build-and-test:
     name: test not-a-connect4 using stack
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest # or macOS-latest, or windows-latest
     steps:
       - uses: actions/checkout@v2
-
-    - name: install stack
-      run: |
-        mkdir -p ~/.local/bin
-        export PATH=~/.local/bin:$PATH
-        if [[ ! -x ~/.local/bin/stack ]]; then curl -sL https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'; chmod a+x ~/.local/bin/stack; fi
-        stack --version
-
-    - name: run stack
-      run: stack test 
+      - uses: haskell/actions/setup@v1
+        with:
+          ghc-version: '8.10.4' # Exact version of ghc to use
+          enable-stack: true
+          stack-version: 'latest'
+      - run: stack test
 

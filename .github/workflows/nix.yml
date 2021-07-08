@@ -1,6 +1,6 @@
 on: [push, pull_request]
 jobs:
-  build-and-run:
+  build-and-test:
     name: test not-a-connect4 using nix
     runs-on: ubuntu-20.04
     steps:
