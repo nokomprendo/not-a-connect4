@@ -1,0 +1,66 @@
+cabal-version:      2.2
+name:               nac4
+version:            1.0
+build-type:         Simple
+license:            MIT
+
+common deps
+    ghc-options:        -Wall 
+    -- ghc-options:        -Wall -O2 -optlo-O3 -optc-O3
+    default-language:   Haskell2010
+
+    build-depends:      base,
+                        aeson,
+                        containers,
+                        lucid,
+                        massiv,
+                        mwc-random,
+                        network,
+                        servant,
+                        servant-lucid,
+                        servant-server,
+                        text,
+                        time,
+                        vector,
+                        wai,
+                        wai-extra,
+                        wai-websockets,
+                        warp,
+                        websockets
+
+library
+    import:             deps
+    hs-source-dirs:     src
+
+    exposed-modules:    NaC4.Game
+                        NaC4.Protocol
+                        NaC4.ProtocolImpl
+                        NaC4.Client.Bot
+                        NaC4.Server.HttpApp
+                        NaC4.Server.WsApp
+                        NaC4.Server.WsManager
+
+executable nac4-client
+    import:             deps
+    hs-source-dirs:     app
+    main-is:            nac4-client.hs
+    build-depends:      nac4
+
+executable nac4-server
+    import:             deps
+    hs-source-dirs:     app
+    main-is:            nac4-server.hs
+    build-depends:      nac4
+
+test-suite spec
+    import:             deps
+    main-is:            Spec.hs
+    hs-source-dirs:     test
+    type:               exitcode-stdio-1.0
+    default-language:   Haskell2010
+    build-depends:      hspec, nac4
+
+    other-modules:      NaC4.GameSpec
+                        NaC4.ProtocolImplSpec
+                        NaC4.Client.BotSpec
+
