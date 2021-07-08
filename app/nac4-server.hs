@@ -13,8 +13,7 @@ main :: IO ()
 main = do
     port <- read . fromMaybe "3000" <$> lookupEnv "PORT"
     putStrLn $ "listening port " ++ show port ++ "..."
-    model <- newModel
-    modelRef <- newIORef model
+    modelRef <- newIORef newModel
     run port 
         $ logStdout 
         $ wsApp modelRef
