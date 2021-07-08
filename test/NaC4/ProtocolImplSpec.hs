@@ -16,69 +16,73 @@ main = hspec spec
 spec :: Spec
 spec = do
 
-    describe "parseProtocol" $ do
+    describe "parseMsgToServer" $ do
 
         it "connect 1" $ do
-            parseProtocol "connect foo bar \n" `shouldBe` Just (Connect "foo" "bar")
-            parseProtocol "connect foo \n" `shouldBe` Nothing
-            parseProtocol "connect foo bar baz \n" `shouldBe` Nothing
-
-        it "connected 1" $ do
-            parseProtocol "connected foo bar \n" `shouldBe` Just (Connected "foo bar")
-            parseProtocol "connected\n" `shouldBe` Just (Connected "")
-
-        it "not-connected 1" $ do
-            parseProtocol "not-connected foo bar \n" `shouldBe` Just (NotConnected "foo bar")
-            parseProtocol "not-connected\n" `shouldBe` Just (NotConnected "")
-
-        it "newgame 1" $ do
-            parseProtocol "newgame foo bar \n" `shouldBe` Just (NewGame "foo" "bar")
-            parseProtocol "newgame foo \n" `shouldBe` Nothing
-            parseProtocol "newgame foo bar baz \n" `shouldBe` Nothing
-
-        it "genmove 1" $ do
-            parseProtocol "genmove board R \n" `shouldBe` Just (GenMove "board" ColorR)
-            parseProtocol "genmove board Y \n" `shouldBe` Just (GenMove "board" ColorY)
-            parseProtocol "genmove board Z \n" `shouldBe` Nothing
-            parseProtocol "genmove board Y foo \n" `shouldBe` Nothing
+            parseMsgToServer "connect foo bar \n" `shouldBe` Just (Connect "foo" "bar")
+            parseMsgToServer "connect foo \n" `shouldBe` Nothing
+            parseMsgToServer "connect foo bar baz \n" `shouldBe` Nothing
 
         it "playmove 1" $ do
-            parseProtocol "playmove 2 \n" `shouldBe` Just (PlayMove 2)
-            parseProtocol "playmove 42 \n" `shouldBe` Just (PlayMove 42)
-            parseProtocol "playmove foo \n" `shouldBe` Nothing
+            parseMsgToServer "playmove 2 \n" `shouldBe` Just (PlayMove 2)
+            parseMsgToServer "playmove 42 \n" `shouldBe` Just (PlayMove 42)
+            parseMsgToServer "playmove foo \n" `shouldBe` Nothing
+
+    describe "parseMsgToClient" $ do
+
+        it "connected 1" $ do
+            parseMsgToClient "connected foo bar \n" `shouldBe` Just (Connected "foo bar")
+            parseMsgToClient "connected\n" `shouldBe` Just (Connected "")
+
+        it "not-connected 1" $ do
+            parseMsgToClient "not-connected foo bar \n" `shouldBe` Just (NotConnected "foo bar")
+            parseMsgToClient "not-connected\n" `shouldBe` Just (NotConnected "")
+
+        it "newgame 1" $ do
+            parseMsgToClient "newgame foo bar \n" `shouldBe` Just (NewGame "foo" "bar")
+            parseMsgToClient "newgame foo \n" `shouldBe` Nothing
+            parseMsgToClient "newgame foo bar baz \n" `shouldBe` Nothing
+
+        it "genmove 1" $ do
+            parseMsgToClient "genmove board R \n" `shouldBe` Just (GenMove "board" ColorR)
+            parseMsgToClient "genmove board Y \n" `shouldBe` Just (GenMove "board" ColorY)
+            parseMsgToClient "genmove board Z \n" `shouldBe` Nothing
+            parseMsgToClient "genmove board Y foo \n" `shouldBe` Nothing
 
         it "endgame 1" $ do
-            parseProtocol "endgame board WinR \n" `shouldBe` Just (EndGame "board" P.WinR)
-            parseProtocol "endgame board WinY \n" `shouldBe` Just (EndGame "board" P.WinY)
-            parseProtocol "endgame board Draw \n" `shouldBe` Just (EndGame "board" P.Draw)
-            parseProtocol "endgame board foo \n" `shouldBe` Nothing
+            parseMsgToClient "endgame board WinR \n" `shouldBe` Just (EndGame "board" P.WinR)
+            parseMsgToClient "endgame board WinY \n" `shouldBe` Just (EndGame "board" P.WinY)
+            parseMsgToClient "endgame board Draw \n" `shouldBe` Just (EndGame "board" P.Draw)
+            parseMsgToClient "endgame board foo \n" `shouldBe` Nothing
 
-    describe "fmtProtocol" $ do
+    describe "fmtMsgToServer" $ do
 
         it "connect 1" $ do
-            fmtProtocol (Connect "foo" "bar")`shouldBe` "connect foo bar \n"
-
-        it "connected 1" $ do
-            fmtProtocol (Connected "foo bar")`shouldBe` "connected foo bar \n"
-
-        it "not-connected 1" $ do
-            fmtProtocol (NotConnected "foo bar")`shouldBe` "not-connected foo bar \n"
-
-        it "newgame 1" $ do
-            fmtProtocol (NewGame "foo" "bar")`shouldBe` "newgame foo bar \n"
-
-        it "genmove 1" $ do
-            fmtProtocol (GenMove "board" ColorR)`shouldBe` "genmove board R \n"
-            fmtProtocol (GenMove "board" ColorY)`shouldBe` "genmove board Y \n"
+            fmtMsgToServer (Connect "foo" "bar")`shouldBe` "connect foo bar \n"
 
         it "playmove 1" $ do
-            fmtProtocol (PlayMove 2)`shouldBe` "playmove 2 \n"
-            fmtProtocol (PlayMove 42)`shouldBe` "playmove 42 \n"
+            fmtMsgToServer (PlayMove 2)`shouldBe` "playmove 2 \n"
+            fmtMsgToServer (PlayMove 42)`shouldBe` "playmove 42 \n"
+
+    describe "fmtMsgToClient" $ do
+
+        it "connected 1" $ do
+            fmtMsgToClient (Connected "foo bar")`shouldBe` "connected foo bar \n"
+
+        it "not-connected 1" $ do
+            fmtMsgToClient (NotConnected "foo bar")`shouldBe` "not-connected foo bar \n"
+
+        it "newgame 1" $ do
+            fmtMsgToClient (NewGame "foo" "bar")`shouldBe` "newgame foo bar \n"
+
+        it "genmove 1" $ do
+            fmtMsgToClient (GenMove "board" ColorR)`shouldBe` "genmove board R \n"
+            fmtMsgToClient (GenMove "board" ColorY)`shouldBe` "genmove board Y \n"
 
         it "endgame 1" $ do
-            fmtProtocol (EndGame "board" P.WinR)`shouldBe` "endgame board WinR \n"
-            fmtProtocol (EndGame "board" P.WinY)`shouldBe` "endgame board WinY \n"
-            fmtProtocol (EndGame "board" P.Draw)`shouldBe` "endgame board Draw \n"
+            fmtMsgToClient (EndGame "board" P.WinR)`shouldBe` "endgame board WinR \n"
+            fmtMsgToClient (EndGame "board" P.WinY)`shouldBe` "endgame board WinY \n"
+            fmtMsgToClient (EndGame "board" P.Draw)`shouldBe` "endgame board Draw \n"
 
     describe "fromGame" $ do
 

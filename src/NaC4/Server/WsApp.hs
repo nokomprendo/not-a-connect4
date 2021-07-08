@@ -2,39 +2,41 @@
 
 module NaC4.Server.WsApp  where
 
-import NaC4.Game
+-- import NaC4.Game
 import NaC4.Protocol as P
 import NaC4.ProtocolImpl as P
 import NaC4.Server.Model
 
-import qualified Network.WebSockets as WS
-
-import Control.Concurrent.MVar
-import Control.Monad.ST
+import Data.IORef
+-- import Control.Monad.ST
 import qualified Data.Map.Strict as M
-import qualified Data.Text as T
+-- import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Network.Wai (Application)
 import Network.Wai.Handler.WebSockets (websocketsOr)
+import qualified Network.WebSockets as WS
 
-wsApp :: MVar Model -> Application -> Application
-wsApp modelVar = websocketsOr WS.defaultConnectionOptions (serverApp modelVar)
+wsApp :: IORef Model -> Application -> Application
+wsApp modelRef = websocketsOr WS.defaultConnectionOptions (serverApp modelRef)
 
-serverApp ::MVar Model -> WS.PendingConnection -> IO ()
-serverApp modelVar pc = do
+serverApp ::IORef Model -> WS.PendingConnection -> IO ()
+serverApp modelRef pc = do
     conn <- WS.acceptRequest pc
-    msgFromClient <- WS.fromLazyByteString <$> WS.receiveData conn
-    case parseProtocol msgFromClient of
+    msgToServer <- WS.fromLazyByteString <$> WS.receiveData conn
+
+    case parseMsgToServer msgToServer of
+
         Just (Connect player pool) -> do
             T.putStrLn $ "connect " <> player <> " into " <> pool
-            modifyMVar_ modelVar $ \m -> 
-                return m { _clients = M.insert player conn (_clients m) }
+            atomicModifyIORef modelRef $ \m -> 
+                (m { _clients = M.insert player conn (_clients m)}, ()) 
                 -- TODO check if already in the map
-            cs <- map fst . M.toList . _clients <$> readMVar modelVar
+            cs <- map fst . M.toList . _clients <$> readIORef modelRef
             print cs
-            WS.sendTextData conn (fmtProtocol $ Connected $ "hello " <> player)
+            WS.sendTextData conn (fmtMsgToClient $ Connected $ "hello " <> player)
 
-        _ -> putStrLn "unknown query"
+
+        _ -> T.putStrLn "unknown query"
 
 
 
@@ -81,15 +83,15 @@ serverApp var pc = do
     msg <- decode . WS.fromLazyByteString <$> WS.receiveData conn
     case msg of
         Just WsMonitorAsk -> do
-            putStrLn "new monitor"
+            T.putStrLn "new monitor"
             iConn <- addMonitorConn var conn
             finally (handleMonitor conn) (disconnectMonitor var iConn)
         Just WsControlAsk -> do
-            putStrLn "new control"
+            T.putStrLn "new control"
             (iConn, agent) <- addControlConn var conn
             WS.sendTextData conn (encode $ WsColor $ agentCol agent) 
             finally (handleControl var iConn conn) (disconnectControl var iConn)
-        _ -> putStrLn "warning: unknown WS connection"
+        _ -> T.putStrLn "warning: unknown WS connection"
 
 loopWsModel :: MVar WsModel -> IO ()
 loopWsModel mVar = forever $ do

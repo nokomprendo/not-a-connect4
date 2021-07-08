@@ -11,8 +11,8 @@ import NaC4.Server.Model
 
 import Control.Monad
 import Control.Monad.IO.Class
-import Control.Concurrent.MVar
 import Data.Aeson
+import Data.IORef
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import GHC.Generics
@@ -27,20 +27,20 @@ type ServerApi
     =    ApiRoute
     :<|> HomeRoute
 
-handleServerApi :: MVar Model -> Server ServerApi
-handleServerApi modelVar
+handleServerApi :: IORef Model -> Server ServerApi
+handleServerApi modelRef
     =    handlePersons
-    :<|> handleHome modelVar
+    :<|> handleHome modelRef
 
 handlePersons :: Handler [Person]
 handlePersons = pure people
 
-handleHome :: MVar Model -> Handler [T.Text]
-handleHome modelVar = 
-    liftIO (map fst . M.toList . _clients <$> readMVar modelVar)
+handleHome :: IORef Model -> Handler [T.Text]
+handleHome modelRef = 
+    liftIO (map fst . M.toList . _clients <$> readIORef modelRef)
 
-httpApp :: MVar Model -> Application
-httpApp modelVar = serve (Proxy @ServerApi) (handleServerApi modelVar)
+httpApp :: IORef Model -> Application
+httpApp modelRef = serve (Proxy @ServerApi) (handleServerApi modelRef)
 
 
 -- HTML serialization of a list of persons
