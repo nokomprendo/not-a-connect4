@@ -15,9 +15,8 @@ main = do
     putStrLn $ "listening port " ++ show port ++ "..."
     model <- newModel
     modelVar <- newMVar model
-    -- _ <- forkIO $ loopWsModel wsModelVar
     run port 
         $ logStdout 
         $ wsApp modelVar
-        httpApp
+        (httpApp modelVar)
 

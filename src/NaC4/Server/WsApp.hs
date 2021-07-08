@@ -18,25 +18,21 @@ import Network.Wai (Application)
 import Network.Wai.Handler.WebSockets (websocketsOr)
 
 wsApp :: MVar Model -> Application -> Application
-wsApp model = websocketsOr WS.defaultConnectionOptions (serverApp model)
+wsApp modelVar = websocketsOr WS.defaultConnectionOptions (serverApp modelVar)
 
 serverApp ::MVar Model -> WS.PendingConnection -> IO ()
-serverApp model pc = do
+serverApp modelVar pc = do
     conn <- WS.acceptRequest pc
     msgFromClient <- WS.fromLazyByteString <$> WS.receiveData conn
     case parseProtocol msgFromClient of
         Just (Connect player pool) -> do
             T.putStrLn $ "connect " <> player <> " into " <> pool
-            modifyMVar_ model (\m -> do
-                let cs = _clients m
-                return m { _clients = M.insert player conn cs })
+            modifyMVar_ modelVar $ \m -> 
+                return m { _clients = M.insert player conn (_clients m) }
                 -- TODO check if already in the map
+            cs <- map fst . M.toList . _clients <$> readMVar modelVar
+            print cs
             WS.sendTextData conn (fmtProtocol $ Connected $ "hello " <> player)
-
-            {-
-            (b, c) <- (_game <$> readMVar model) >>= stToIO . fromGame
-            let msgToClient = fmtProtocol $ GenMove b c
-            -}
 
         _ -> putStrLn "unknown query"
 

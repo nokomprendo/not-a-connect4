@@ -7,29 +7,50 @@
 
 module NaC4.Server.HttpApp where
 
+import NaC4.Server.Model
+
+import Control.Monad
+import Control.Monad.IO.Class
+import Control.Concurrent.MVar
 import Data.Aeson
+import qualified Data.Map.Strict as M
+import qualified Data.Text as T
 import GHC.Generics
 import Lucid
 import Servant
 import Servant.HTML.Lucid
 
 type ApiRoute = "api" :> Get '[JSON] [Person]
-type HomeRoute = Get '[HTML] [Person]
+type HomeRoute = Get '[HTML] [T.Text]
 
 type ServerApi
     =    ApiRoute
     :<|> HomeRoute
 
-handleServerApi :: Server ServerApi
-handleServerApi
+handleServerApi :: MVar Model -> Server ServerApi
+handleServerApi modelVar
     =    handlePersons
-    :<|> handlePersons
+    :<|> handleHome modelVar
 
 handlePersons :: Handler [Person]
 handlePersons = pure people
 
-httpApp :: Application
-httpApp = serve (Proxy @ServerApi) handleServerApi
+handleHome :: MVar Model -> Handler [T.Text]
+handleHome modelVar = 
+    liftIO (map fst . M.toList . _clients <$> readMVar modelVar)
+
+httpApp :: MVar Model -> Application
+httpApp modelVar = serve (Proxy @ServerApi) (handleServerApi modelVar)
+
+
+-- HTML serialization of a list of persons
+instance ToHtml [T.Text] where
+  toHtml cs = ul_ $ do
+    forM_ cs $ \c -> li_ $ toHtml c
+
+  toHtmlRaw = toHtml
+
+
 
 data Person = Person
   { firstName :: String
