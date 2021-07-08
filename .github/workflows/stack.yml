@@ -11,7 +11,4 @@ jobs:
           #ghc-version: '8.10.4' # Exact version of ghc to use
           enable-stack: true
             #stack-version: 'lts-18.1'
-      - run: 
-        #stack build
-        stack test
-
+      - run: stack test
