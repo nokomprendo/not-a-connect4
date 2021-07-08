@@ -10,5 +10,14 @@ jobs:
           ghc-version: '8.10.4' 
           enable-stack: true
           stack-version: 'latest'
+
+      - name: cache stack-work
+        uses: actions/cache@v2
+        with:
+          path: |
+            .stack-work
+            stack.yaml.lock
+            #key: ${{ runner.os }}-${{ matrix.ghc }}
+
       - run: stack test
 
