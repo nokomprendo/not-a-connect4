@@ -62,4 +62,5 @@ s2c: endgame BOARD RESULT\n
 - le serveur envoie un jeu et fin
 - le serveur stocke les clients dans une map
 - le serveur affiche les clients dans la page web
+- implémentation client
 

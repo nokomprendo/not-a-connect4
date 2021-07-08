@@ -22,7 +22,7 @@ wsApp modelRef = websocketsOr WS.defaultConnectionOptions (serverApp modelRef)
 serverApp ::IORef Model -> WS.PendingConnection -> IO ()
 serverApp modelRef pc = do
     conn <- WS.acceptRequest pc
-    msgToServer <- WS.fromLazyByteString <$> WS.receiveData conn
+    msgToServer <- recvMsg conn
 
     case parseMsgToServer msgToServer of
 
@@ -33,10 +33,19 @@ serverApp modelRef pc = do
                 -- TODO check if already in the map
             cs <- map fst . M.toList . _clients <$> readIORef modelRef
             print cs
-            WS.sendTextData conn (fmtMsgToClient $ Connected $ "hello " <> player)
 
+            sendMsg (Connected $ "hello " <> player) conn
 
         _ -> T.putStrLn "unknown query"
+
+
+
+
+recvMsg :: WS.WebSocketsData b => WS.Connection -> IO b
+recvMsg conn = WS.fromLazyByteString <$> WS.receiveData conn
+
+sendMsg :: MsgToClient -> WS.Connection -> IO ()
+sendMsg msg conn = WS.sendTextData conn (fmtMsgToClient msg)
 
 
 
