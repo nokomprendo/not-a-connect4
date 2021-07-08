@@ -3,15 +3,17 @@
 module NaC4.Server.WsApp  where
 
 import NaC4.Game
-import NaC4.Protocol
-import NaC4.ProtocolImpl
+import NaC4.Protocol as P
+import NaC4.ProtocolImpl as P
 import NaC4.Server.Model
 
 import qualified Network.WebSockets as WS
 
 import Control.Concurrent.MVar
 import Control.Monad.ST
-import Data.Text as T
+import qualified Data.Map.Strict as M
+import qualified Data.Text as T
+import qualified Data.Text.IO as T
 import Network.Wai (Application)
 import Network.Wai.Handler.WebSockets (websocketsOr)
 
@@ -22,12 +24,20 @@ serverApp ::MVar Model -> WS.PendingConnection -> IO ()
 serverApp model pc = do
     conn <- WS.acceptRequest pc
     msgFromClient <- WS.fromLazyByteString <$> WS.receiveData conn
-    case (msgFromClient :: T.Text) of
-        "CONNECT"  -> do
-            putStrLn "received connect, sending game"
+    case parseProtocol msgFromClient of
+        Just (Connect player pool) -> do
+            T.putStrLn $ "connect " <> player <> " into " <> pool
+            modifyMVar_ model (\m -> do
+                let cs = _clients m
+                return m { _clients = M.insert player conn cs })
+                -- TODO check if already in the map
+            WS.sendTextData conn (fmtProtocol $ Connected $ "hello " <> player)
+
+            {-
             (b, c) <- (_game <$> readMVar model) >>= stToIO . fromGame
             let msgToClient = fmtProtocol $ GenMove b c
-            WS.sendTextData conn msgToClient
+            -}
+
         _ -> putStrLn "unknown query"
 
 
