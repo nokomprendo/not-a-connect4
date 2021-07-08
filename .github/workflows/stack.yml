@@ -11,13 +11,14 @@ jobs:
           enable-stack: true
           stack-version: 'latest'
 
-      - name: cache stack-work
+      - name: cache stack
         uses: actions/cache@v2
         with:
           path: |
+            ~/.stack
             .stack-work
             stack.yaml.lock
-          key: ${{ runner.os }}-${{ matrix.ghc }}
+          key: ${{ runner.os }}
 
       - run: stack test
 
