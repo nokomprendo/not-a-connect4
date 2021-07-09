@@ -49,9 +49,11 @@ spec = do
             parseMsgToClient "genmove board Y foo \n" `shouldBe` Nothing
 
         it "endgame 1" $ do
-            parseMsgToClient "endgame board WinR \n" `shouldBe` Just (EndGame "board" P.WinR)
-            parseMsgToClient "endgame board WinY \n" `shouldBe` Just (EndGame "board" P.WinY)
-            parseMsgToClient "endgame board Draw \n" `shouldBe` Just (EndGame "board" P.Draw)
+            parseMsgToClient "endgame board WinR \n" `shouldBe` Just (EndGame "board" G.WinR)
+            parseMsgToClient "endgame board WinY \n" `shouldBe` Just (EndGame "board" G.WinY)
+            parseMsgToClient "endgame board PlayR \n" `shouldBe` Just (EndGame "board" G.PlayR)
+            parseMsgToClient "endgame board PlayY \n" `shouldBe` Just (EndGame "board" G.PlayY)
+            parseMsgToClient "endgame board Tie \n" `shouldBe` Just (EndGame "board" G.Tie)
             parseMsgToClient "endgame board foo \n" `shouldBe` Nothing
 
     describe "fmtMsgToServer" $ do
@@ -79,9 +81,11 @@ spec = do
             fmtMsgToClient (GenMove "board" ColorY)`shouldBe` "genmove board Y \n"
 
         it "endgame 1" $ do
-            fmtMsgToClient (EndGame "board" P.WinR)`shouldBe` "endgame board WinR \n"
-            fmtMsgToClient (EndGame "board" P.WinY)`shouldBe` "endgame board WinY \n"
-            fmtMsgToClient (EndGame "board" P.Draw)`shouldBe` "endgame board Draw \n"
+            fmtMsgToClient (EndGame "board" G.WinR)`shouldBe` "endgame board WinR \n"
+            fmtMsgToClient (EndGame "board" G.WinY)`shouldBe` "endgame board WinY \n"
+            fmtMsgToClient (EndGame "board" G.PlayR)`shouldBe` "endgame board PlayR \n"
+            fmtMsgToClient (EndGame "board" G.PlayY)`shouldBe` "endgame board PlayY \n"
+            fmtMsgToClient (EndGame "board" G.Tie)`shouldBe` "endgame board Tie \n"
 
     describe "fromGame" $ do
 

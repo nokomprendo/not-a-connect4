@@ -40,9 +40,49 @@ s2c: endgame BOARD STATUS \n
 - API JSON ?
 - page web ?
 
+## Déploiement
+
+- construire l'image Docker
+
+```
+nix-build docker.nix
+docker load -i result
+```
+
+- déployer sur Heroku
+
+```
+heroku login
+heroku container:login
+heroku create not-a-connect4
+
+docker tag not-a-connect4:latest registry.heroku.com/not-a-connect4/web
+docker push registry.heroku.com/not-a-connect4/web
+heroku container:release web --app not-a-connect4
+```
+
+- ouvrir, fermer, logs
+
+```
+heroku open --app not-a-connect4
+heroku ps:scale web=0 --app not-a-connect4
+heroku logs --app not-a-connect4
+```
+
+- lancer un client (avec stack)
+
+```
+stack run nac4-client not-a-connect4.herokuapp.com 80 myname zepool
+```
+
+- lancer un client (avec nix+cabal)
+
+```
+nix-shell --run "cabal run nac4-client not-a-connect4.herokuapp.com 80 myname zepool"
+```
+
 ## Roadmap
 
-- déploiement docker/heroku
 - n joueurs via server
 - page web SSE
 - channels
@@ -63,4 +103,5 @@ s2c: endgame BOARD STATUS \n
 - implémentation client
 - enregistre les clients + newgame si 2 clients
 - 2 joueurs clients via server
+- déploiement docker/heroku
 
