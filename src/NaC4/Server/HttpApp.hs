@@ -45,8 +45,10 @@ httpApp modelVar = serve (Proxy @ServerApi) (handleServerApi modelVar)
 
 -- HTML serialization of a list of persons
 instance ToHtml [T.Text] where
-  toHtml cs = ul_ $ do
-    forM_ cs $ \c -> li_ $ toHtml c
+  toHtml cs = do
+    h1_ "Not a Connect4"
+    p_ $ a_ [href_ "https://github.com/nokomprendo/not-a-connect4"] "source code"
+    ul_ $ forM_ cs $ \c -> li_ $ toHtml c
 
   toHtmlRaw = toHtml
 

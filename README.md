@@ -2,6 +2,8 @@
 
 Puissance 4 en réseau pour comparer des IA.
 
+[application heroku](http://not-a-connect4.herokuapp.com/)
+
 ## Protocole réseau
 
 - websockets
