@@ -14,6 +14,7 @@ common deps
                         containers,
                         lucid,
                         massiv,
+                        microlens-platform,
                         mwc-random,
                         network,
                         servant,
@@ -38,6 +39,7 @@ library
                         NaC4.Client.Bot
                         NaC4.Server.HttpApp
                         NaC4.Server.Model
+                        NaC4.Server.Runner
                         NaC4.Server.WsApp
 
 executable nac4-client
