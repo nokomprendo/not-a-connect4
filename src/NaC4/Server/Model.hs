@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module NaC4.Server.Model where
 
@@ -8,7 +8,6 @@ import NaC4.Protocol as P
 import Control.Monad.ST
 import Data.IORef
 import qualified Data.Map.Strict as M
--- import qualified Data.Text as T
 import Lens.Micro.Platform
 import qualified Network.WebSockets as WS
 
@@ -29,13 +28,13 @@ isInBattle p (pr, py, _) = p == pr || p == py
 newModel :: Model
 newModel = Model M.empty [] [] 0
 
-addPlayer :: IORef Model -> P.Player -> WS.Connection -> IO Bool
-addPlayer modelRef player conn =  
+addClient :: IORef Model -> P.Player -> WS.Connection -> IO Bool
+addClient modelRef player conn =  
     atomicModifyIORef' modelRef $ \m -> 
         if M.member player $ m^.clients
             then (m, False)
-            else (m & clients %~ M.insert player conn, True) 
-            -- else (m { _clients = M.insert player conn (_clients m)}, True) 
+            else (m & clients %~ M.insert player conn
+                    & waiting %~ (player:), True) 
 
 -- cs <- map fst . M.toList . _clients <$> readIORef modelRef
 

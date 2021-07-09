@@ -5,7 +5,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
-module NaC4.Server.HttpApp where
+module NaC4.Server.HttpApp (httpApp) where
 
 import NaC4.Server.Model
 

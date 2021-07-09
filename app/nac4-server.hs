@@ -1,6 +1,5 @@
 import NaC4.Server.HttpApp
 import NaC4.Server.Model
-import NaC4.Server.Runner
 import NaC4.Server.WsApp
 
 import Control.Concurrent (forkIO)

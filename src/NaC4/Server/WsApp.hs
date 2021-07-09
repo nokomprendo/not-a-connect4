@@ -1,19 +1,28 @@
+{-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module NaC4.Server.WsApp  where
+module NaC4.Server.WsApp (wsApp, loopRunner) where
 
 -- import NaC4.Game
 import NaC4.Protocol as P
 import NaC4.Server.Model
 
-import Data.IORef
+import Control.Concurrent (threadDelay)
+import Control.Exception (finally)
+import Control.Monad (forever, when)
+import Data.IORef (readIORef, IORef, atomicModifyIORef')
 -- import Control.Monad.ST
--- import qualified Data.Map.Strict as M
+import qualified Data.Map.Strict as M
 -- import qualified Data.Text as T
 import qualified Data.Text.IO as T
+import Lens.Micro.Platform
 import Network.Wai (Application)
 import Network.Wai.Handler.WebSockets (websocketsOr)
 import qualified Network.WebSockets as WS
+
+-------------------------------------------------------------------------------
+-- wsApp
+-------------------------------------------------------------------------------
 
 wsApp :: IORef Model -> Application -> Application
 wsApp modelRef = websocketsOr WS.defaultConnectionOptions (serverApp modelRef)
@@ -22,19 +31,64 @@ serverApp ::IORef Model -> WS.PendingConnection -> IO ()
 serverApp modelRef pc = do
     conn <- WS.acceptRequest pc
     msgToServer <- recvMsg conn
-    case parseMsgToServer msgToServer of
+    case msgToServer of
         Just (Connect player pool) -> do
             T.putStrLn $ "connect " <> player <> " into " <> pool
-            ok <- addPlayer modelRef player conn
+            ok <- addClient modelRef player conn
             if ok 
             then sendMsg (Connected $ "hello " <> player) conn
             else sendMsg (NotConnected $ player <> " already used") conn
-            -- TODO
-            -- finally (handleControl var iConn conn) (disconnectControl var iConn)
+            finally (run modelRef player conn) (stop modelRef player)
         _ -> T.putStrLn "unknown query"
 
-recvMsg :: WS.WebSocketsData b => WS.Connection -> IO b
-recvMsg conn = WS.fromLazyByteString <$> WS.receiveData conn
+run :: IORef Model -> Player -> WS.Connection -> IO ()
+run modelRef player conn = forever $ do
+    msg <- recvMsg conn
+    case msg of
+        Just (P.PlayMove m) -> do
+            -- TODO play game
+            putStrLn $ "playmove: " <> show m
+        _ -> putStrLn "unknown message; skipping"
+
+stop :: IORef Model -> Player -> IO ()
+stop modelRef player = do
+    -- TODO rmClient
+    putStrLn "stop"
+
+-------------------------------------------------------------------------------
+-- runner
+-------------------------------------------------------------------------------
+
+sleepTime :: Int
+sleepTime = 1_000_000 
+
+nbGames :: Int
+nbGames = 10 
+
+loopRunner :: IORef Model -> IO ()
+loopRunner modelRef = do
+    threadDelay sleepTime
+
+    -- TODO
+    m <- readIORef modelRef
+    print $ m^.waiting
+    when (length (m^.waiting) >= 2) $ do 
+        let pr = (m^.waiting) !! 0
+            py = (m^.waiting) !! 1
+        sendMsg (NewGame pr py) ((m^.clients) M.! pr)
+        sendMsg (NewGame pr py) ((m^.clients) M.! py)
+        putStrLn "TODO 2 clients waiting"
+
+    atomicModifyIORef' modelRef (\m -> (m&counter+~1, m^.counter)) >>= print
+
+    loopRunner modelRef
+
+-------------------------------------------------------------------------------
+-- ws
+-------------------------------------------------------------------------------
+
+recvMsg :: WS.Connection -> IO (Maybe MsgToServer)
+recvMsg conn = parseMsgToServer . WS.fromLazyByteString <$> WS.receiveData conn
 
 sendMsg :: MsgToClient -> WS.Connection -> IO ()
 sendMsg msg conn = WS.sendTextData conn (fmtMsgToClient msg)
@@ -42,7 +96,6 @@ sendMsg msg conn = WS.sendTextData conn (fmtMsgToClient msg)
 
 {-
 
-import Control.Exception (finally)
 import Data.Aeson (decode, encode)
 import Data.Time.Clock (diffTimeToPicoseconds, utctDayTime)
 import Data.Time.Clock.POSIX (getCurrentTime)

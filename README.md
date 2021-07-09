@@ -62,5 +62,5 @@ s2c: endgame BOARD RESULT\n
 - le serveur stocke les clients dans une map
 - le serveur affiche les clients dans la page web
 - implémentation client
-- runner basique
+- enregistre les clients + newgame si 2 clients
 
