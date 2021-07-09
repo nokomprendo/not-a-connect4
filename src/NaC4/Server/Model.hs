@@ -11,7 +11,7 @@ import qualified Data.Map.Strict as M
 import Lens.Micro.Platform
 import qualified Network.WebSockets as WS
 
-type Battle = (P.Player, P.Player, Game RealWorld)
+type Battle = (P.Player, P.Player, Game RealWorld)  -- TODO connexions ?
 
 data Model = Model
     { _clients :: M.Map P.Player WS.Connection
@@ -37,4 +37,12 @@ addClient modelVar player conn =  atomically $ do
             writeTVar modelVar (m & clients %~ M.insert player conn
                                   & waiting %~ (player:))
             return True
+
+rmClient :: TVar Model -> P.Player -> IO ()
+rmClient modelVar player = atomically $ do
+    m <- readTVar modelVar
+    -- TODO stop battle and put opponent in waiting
+    writeTVar modelVar (m & clients %~ M.delete player
+                          & battles %~ filter (not . isInBattle player)
+                          & waiting %~ filter (/=player))
 

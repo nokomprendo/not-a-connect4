@@ -127,11 +127,10 @@ toGame b c
         let (s, p) = if c == ColorR then (G.PlayR, G.PlayerR) else (G.PlayY, G.PlayerY)
             go acc [] = acc
             go acc xs = 
-                let (x1, x2) = splitAt (G.nJ-1) xs
+                let (x1, x2) = splitAt G.nJ xs
                 in go (acc++[x1]) x2
             bb = go [] (map parseCell $ T.unpack b)
         arr <- A.thawS (A.fromLists' A.Seq bb)
         let moves = [ j | (x,j) <- zip (last bb) [0..], x==G.CellE ]
         return $ Just $ G.Game s p p (U.fromList moves) arr
-
 

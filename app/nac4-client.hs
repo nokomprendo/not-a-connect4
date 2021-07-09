@@ -50,11 +50,11 @@ run bot conn = do
             case gameM of
                 Nothing -> T.putStrLn "genmove: error"
                 Just game -> do
+                    T.putStrLn $ "genmove: " <> b <> " " <> fmtColor c
                     k <- stToIO $ genmove bot game
                     let j = G._moves game U.! k
-                    sendMsg (PlayMove  j) conn
-                    T.putStrLn $ "genmove: " <> b <> " " <> fmtColor c
                     T.putStrLn $ "playmove: " <> T.pack (show j)
+                    sendMsg (PlayMove  j) conn
         Just (EndGame b r) -> T.putStrLn $ "endgame: " <> b <> " " <> fmtResult r
         _ -> die "unknown error"
     run bot conn

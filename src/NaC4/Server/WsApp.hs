@@ -3,15 +3,16 @@
 
 module NaC4.Server.WsApp (wsApp, loopRunner) where
 
--- import NaC4.Game
+import NaC4.Game as G
 import NaC4.Protocol as P
 import NaC4.Server.Model
 
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.STM
 import Control.Exception (finally)
-import Control.Monad (forever, when)
--- import Control.Monad.ST
+import Control.Monad (forever, when, unless)
+import Control.Monad.IO.Class (liftIO)
+import Control.Monad.ST
 import qualified Data.Map.Strict as M
 -- import qualified Data.Text as T
 import qualified Data.Text.IO as T
@@ -36,12 +37,13 @@ serverApp modelVar pc = do
             T.putStrLn $ "connect " <> player <> " into " <> pool
             ok <- addClient modelVar player conn
             if ok 
-            then sendMsg (Connected $ "hello " <> player) conn
+            then do
+                sendMsg (Connected $ "hello " <> player) conn
+                finally (run modelVar player conn) (stop modelVar player)
             else sendMsg (NotConnected $ player <> " already used") conn
-            finally (run modelVar player conn) (stop modelVar player)
         _ -> T.putStrLn "unknown query"
 
-run :: TVar Model -> Player -> WS.Connection -> IO ()
+run :: TVar Model -> P.Player -> WS.Connection -> IO ()
 run modelVar player conn = forever $ do
     msg <- recvMsg conn
     case msg of
@@ -50,9 +52,9 @@ run modelVar player conn = forever $ do
             putStrLn $ "playmove: " <> show m
         _ -> putStrLn "unknown message; skipping"
 
-stop :: TVar Model -> Player -> IO ()
+stop :: TVar Model -> P.Player -> IO ()
 stop modelVar player = do
-    -- TODO rmClient
+    rmClient modelVar player
     putStrLn "stop"
 
 -------------------------------------------------------------------------------
@@ -69,19 +71,26 @@ loopRunner :: TVar Model -> IO ()
 loopRunner modelVar = do
     threadDelay sleepTime
 
-    -- TODO
-    m <- readTVarIO modelVar
-    print $ m^.waiting
-    when (length (m^.waiting) >= 2) $ do 
-        let pr = (m^.waiting) !! 0
-            py = (m^.waiting) !! 1
-        sendMsg (NewGame pr py) ((m^.clients) M.! pr)
-        sendMsg (NewGame pr py) ((m^.clients) M.! py)
-        putStrLn "TODO 2 clients waiting"
+    mPrPyCrCy <- atomically $ do
+        m <- readTVar modelVar
+        case m^.waiting of
+            (pr:py:ws) -> do
+                writeTVar modelVar (m & waiting .~ ws)
+                let cs = m ^. clients
+                return $ Just (pr, py, cs M.! pr, cs M.! py)
+            _ -> return Nothing
 
-    -- TODO atomicModifyIORef' modelVar (\m -> (m&counter+~1, m^.counter)) >>= print
-
-    loopRunner modelVar
+    case mPrPyCrCy of
+        Nothing -> loopRunner modelVar
+        Just (pr, py, cr, cy) -> do
+            T.putStrLn $ "newgame: " <> pr <> " vs " <> py
+            sendMsg (NewGame pr py) cr
+            sendMsg (NewGame pr py) cy
+            game <- stToIO $ G.mkGame G.PlayerR
+            atomically $ modifyTVar' modelVar (\m -> m & battles %~ ((pr,py,game):))
+            (b, c) <- stToIO $ fromGame game
+            sendMsg (GenMove b c) cr
+            loopRunner modelVar
 
 -------------------------------------------------------------------------------
 -- ws
@@ -92,6 +101,9 @@ recvMsg conn = parseMsgToServer . WS.fromLazyByteString <$> WS.receiveData conn
 
 sendMsg :: MsgToClient -> WS.Connection -> IO ()
 sendMsg msg conn = WS.sendTextData conn (fmtMsgToClient msg)
+
+
+
 
 
 {-
