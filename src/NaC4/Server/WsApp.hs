@@ -40,15 +40,9 @@ sendMsg :: MsgToClient -> WS.Connection -> IO ()
 sendMsg msg conn = WS.sendTextData conn (fmtMsgToClient msg)
 
 
-
 {-
 
-import Common.Game
-import Common.WsProtocol
-
-import Control.Concurrent (modifyMVar, modifyMVar_, MVar, threadDelay)
 import Control.Exception (finally)
-import Control.Monad (forever, forM_)
 import Data.Aeson (decode, encode)
 import Data.Time.Clock (diffTimeToPicoseconds, utctDayTime)
 import Data.Time.Clock.POSIX (getCurrentTime)
@@ -62,11 +56,6 @@ wsGameTimeStep = round wsGameTimeStepD
 myGetTime :: IO Double
 myGetTime = (* 10e-12) . fromIntegral . diffTimeToPicoseconds . utctDayTime
             <$> getCurrentTime
-
-newWsModel :: IO WsModel
-newWsModel = do
-    t0 <- myGetTime
-    return $ WsModel newGame t0 newWsConnManager newWsConnManager
 
 serverApp :: MVar WsModel -> WS.PendingConnection -> IO ()
 serverApp var pc = do

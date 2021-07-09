@@ -42,12 +42,11 @@ s2c: endgame BOARD RESULT\n
 
 ## Roadmap
 
-- 1 joueur client vs 1 joueur server
 - 2 joueurs clients via server
-- n joueurs via server
-- channels
 - déploiement docker/heroku
+- n joueurs via server
 - page web SSE
+- channels
 - stocker les résultats dans une BD
 
 ## Changelog
