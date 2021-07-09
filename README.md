@@ -10,28 +10,28 @@ Puissance 4 en réseau pour comparer des IA.
 - BOARD: (. | R | Y)x42                     ; ligne0, ligne1...
 - COLOR: R | Y
 - MOVE: 0-6                                 ; numéro colonne
-- RESULT: WinR | WinY | Draw
+- STATUS : WinR | WinY | Tie | PlayR | PlayY
 - move invalide -> annulation partie courante et fin
 - déconnexion -> annulation partie courante et fin
 - TODO: gestion du temps (par coup ? par partie ? ...)
 - s2c/c2s: server-to-client/client-to-server
 
 ```
-c2s: connect <player-name> <pool>\n
-s2c: connected [message]\n                  ; message d'accueil
-s2c: not-connected [message]\n              ; message d'erreur
+c2s: connect <player-name> <pool> \n
+s2c: connected [message] \n                 ; message d'accueil
+s2c: not-connected [message] \n             ; message d'erreur
 
-s2c: newgame <playerR> <playerY>\n
-s2c: genmove BOARD COLOR\n                 ; board, 1er joueur, joueur courant
-c2s: playmove MOVE\n
-s2c: endgame BOARD RESULT\n
+s2c: newgame <playerR> <playerY> \n
+s2c: genmove BOARD COLOR \n                 ; board, 1er joueur, joueur courant
+c2s: playmove MOVE \n
+s2c: endgame BOARD STATUS \n
 ```
 
 ## Monitoring serveur
 
 ```
 - pour chaque pool: nom, description
-    - pour chaque partie terminée: <playerR> <playerY> RESULT HISTORY TIME TIME
+    - pour chaque partie terminée: <playerR> <playerY> STATUS HISTORY TIME TIME
     - pour chaque joueur: nbparties, ratio win/lose/draw, durée moyenne
 ```
 
@@ -42,7 +42,6 @@ s2c: endgame BOARD RESULT\n
 
 ## Roadmap
 
-- 2 joueurs clients via server
 - déploiement docker/heroku
 - n joueurs via server
 - page web SSE
@@ -63,4 +62,5 @@ s2c: endgame BOARD RESULT\n
 - le serveur affiche les clients dans la page web
 - implémentation client
 - enregistre les clients + newgame si 2 clients
+- 2 joueurs clients via server
 

@@ -55,7 +55,9 @@ run bot conn = do
                     let j = G._moves game U.! k
                     T.putStrLn $ "playmove: " <> T.pack (show j)
                     sendMsg (PlayMove  j) conn
-        Just (EndGame b r) -> T.putStrLn $ "endgame: " <> b <> " " <> fmtResult r
+        Just (EndGame b s) -> do
+            T.putStrLn $ "endgame: " <> b <> " " <> fmtStatus s
+            die "TODO handle multiple games"
         _ -> die "unknown error"
     run bot conn
 

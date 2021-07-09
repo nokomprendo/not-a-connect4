@@ -55,15 +55,27 @@ run modelVar player conn = forever $ do
                 Nothing -> T.putStrLn $ "invalid playmove from " <> player
                 Just (pr, py, cr, cy, g) -> do
                     -- TODO check player
-                    g1 <- stToIO $ G.playJ move g
-                    -- TODO writeTVarIO modelVar $ 
-                    if G.isRunning g1
+                    if _currentPlayer g == G.PlayerR && player == pr
+                        || _currentPlayer g == G.PlayerY && player == py
                     then do
+                        g1 <- stToIO $ G.playJ move g
+                        -- TODO refactor ?
+                        atomically $ modifyTVar' modelVar $ \mm -> 
+                            mm & battles %~ map (\bt@(pri,pyi,_,_,_) -> 
+                                if pr==pri && py==pyi
+                                then (pr,py,cr,cy,g1)
+                                else bt)
                         let c = if G._currentPlayer g1 == G.PlayerR then cr else cy
                         (board, color) <- stToIO $ P.fromGame g1
-                        sendMsg (GenMove board color) c
-                    else T.putStrLn "TODO endgame"
-                    -- TODO play game
+                        if G.isRunning g1
+                        then sendMsg (GenMove board color) c
+                        else do
+                            let status = G._status g1
+                            print status
+                            sendMsg (EndGame board status) cr
+                            sendMsg (EndGame board status) cy
+                    else T.putStrLn $ "not your turn " <> player
+                        -- TODO play game
         _ -> putStrLn "unknown message; skipping"
 
 stop :: TVar Model -> P.Player -> IO ()
@@ -78,8 +90,8 @@ stop modelVar player = do
 sleepTime :: Int
 sleepTime = 1_000_000 
 
-nbGames :: Int
-nbGames = 10 
+-- nbGames :: Int
+-- nbGames = 10 
 
 loopRunner :: TVar Model -> IO ()
 loopRunner modelVar = do

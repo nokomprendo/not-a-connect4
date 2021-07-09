@@ -24,11 +24,7 @@ data Color
     | ColorY
     deriving (Eq, Show)
 
-data Result
-    = WinR
-    | WinY
-    | Draw
-    deriving (Eq, Show)
+type Status = G.Status
 
 data MsgToServer
     = Connect Player Pool
@@ -40,7 +36,7 @@ data MsgToClient
     | NotConnected T.Text
     | NewGame Player Player
     | GenMove Board Color
-    | EndGame Board Result
+    | EndGame Board Status
     deriving (Eq, Show)
 
 -------------------------------------------------------------------------------
@@ -59,7 +55,7 @@ parseMsgToClient input = case T.words input of
     ("not-connected":xs) -> Just $ NotConnected (T.unwords xs)
     ["newgame", pr, py] -> Just $ NewGame pr py 
     ["genmove", board, color] -> GenMove board <$> parseColor color
-    ["endgame", b, res] -> EndGame b <$> parseResult res
+    ["endgame", b, res] -> EndGame b <$> parseStatus res
     _ -> Nothing
 
 parseColor :: T.Text -> Maybe Color
@@ -67,11 +63,13 @@ parseColor "R" = Just ColorR
 parseColor "Y" = Just ColorY
 parseColor _ = Nothing
 
-parseResult :: T.Text -> Maybe Result
-parseResult "WinR" = Just WinR
-parseResult "WinY" = Just WinY
-parseResult "Draw" = Just Draw
-parseResult _ = Nothing
+parseStatus :: T.Text -> Maybe Status
+parseStatus "WinR" = Just G.WinR
+parseStatus "WinY" = Just G.WinY
+parseStatus "Tie" = Just G.Tie
+parseStatus "PlayR" = Just G.PlayR
+parseStatus "PlayY" = Just G.PlayY
+parseStatus _ = Nothing
 
 -------------------------------------------------------------------------------
 -- format message
@@ -86,16 +84,18 @@ fmtMsgToClient (Connected msg) = fmtMsg ["connected", msg]
 fmtMsgToClient (NotConnected msg) = fmtMsg ["not-connected", msg]
 fmtMsgToClient (NewGame pr py) = fmtMsg ["newgame", pr, py]
 fmtMsgToClient (GenMove b c) = fmtMsg ["genmove", b, fmtColor c]
-fmtMsgToClient (EndGame b res) = fmtMsg ["endgame", b, fmtResult res]
+fmtMsgToClient (EndGame b res) = fmtMsg ["endgame", b, fmtStatus res]
 
 fmtColor :: Color -> T.Text
 fmtColor ColorR = "R"
 fmtColor ColorY = "Y"
 
-fmtResult :: Result -> T.Text
-fmtResult WinR = "WinR"
-fmtResult WinY = "WinY"
-fmtResult Draw = "Draw"
+fmtStatus :: Status -> T.Text
+fmtStatus G.WinR = "WinR"
+fmtStatus G.WinY = "WinY"
+fmtStatus G.Tie = "Tie"
+fmtStatus G.PlayR = "PlayR"
+fmtStatus G.PlayY = "PlayY"
 
 fmtMsg :: [T.Text] -> T.Text
 fmtMsg xs = T.unwords (xs ++ ["\n"])
