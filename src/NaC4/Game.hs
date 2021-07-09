@@ -63,9 +63,10 @@ nextGame :: Game s -> ST s (Game s)
 nextGame g0 = mkGame (nextPlayer $ _firstPlayer g0)
 
 playK :: Int -> Game s -> ST s (Game s)
-playK k g@(Game _ cp _ ms cs) = do
+playK k g@(Game _ _ _ ms _) = playJ (ms U.! k) g
 
-    let j0 = ms U.! k
+playJ :: Int -> Game s -> ST s (Game s)
+playJ j0 g@(Game _ cp _ ms cs) = do
 
     -- find and play cell
     let findI 0 = return 0

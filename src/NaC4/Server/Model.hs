@@ -11,7 +11,7 @@ import qualified Data.Map.Strict as M
 import Lens.Micro.Platform
 import qualified Network.WebSockets as WS
 
-type Battle = (P.Player, P.Player, Game RealWorld)  -- TODO connexions ?
+type Battle = (P.Player, P.Player, WS.Connection, WS.Connection, Game RealWorld)
 
 data Model = Model
     { _clients :: M.Map P.Player WS.Connection
@@ -23,7 +23,7 @@ data Model = Model
 makeLenses ''Model
 
 isInBattle :: P.Player -> Battle -> Bool
-isInBattle p (pr, py, _) = p == pr || p == py
+isInBattle p (pr, py, _, _, _) = p == pr || p == py
 
 newModel :: Model
 newModel = Model M.empty [] [] 0

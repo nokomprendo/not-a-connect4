@@ -10,11 +10,11 @@ import NaC4.Server.Model
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.STM
 import Control.Exception (finally)
-import Control.Monad (forever, when, unless)
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad (forever)
 import Control.Monad.ST
+import Data.List
 import qualified Data.Map.Strict as M
--- import qualified Data.Text as T
+import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Lens.Micro.Platform
 import Network.Wai (Application)
@@ -47,9 +47,23 @@ run :: TVar Model -> P.Player -> WS.Connection -> IO ()
 run modelVar player conn = forever $ do
     msg <- recvMsg conn
     case msg of
-        Just (P.PlayMove m) -> do
-            -- TODO play game
-            putStrLn $ "playmove: " <> show m
+        Just (P.PlayMove move) -> do
+            T.putStrLn $ "playmove: " <> player <> " plays " <> T.pack (show move)
+            m <- readTVarIO modelVar
+            let battle = m^.battles & find (isInBattle player)
+            case battle of
+                Nothing -> T.putStrLn $ "invalid playmove from " <> player
+                Just (pr, py, cr, cy, g) -> do
+                    -- TODO check player
+                    g1 <- stToIO $ G.playJ move g
+                    -- TODO writeTVarIO modelVar $ 
+                    if G.isRunning g1
+                    then do
+                        let c = if G._currentPlayer g1 == G.PlayerR then cr else cy
+                        (board, color) <- stToIO $ P.fromGame g1
+                        sendMsg (GenMove board color) c
+                    else T.putStrLn "TODO endgame"
+                    -- TODO play game
         _ -> putStrLn "unknown message; skipping"
 
 stop :: TVar Model -> P.Player -> IO ()
@@ -87,7 +101,8 @@ loopRunner modelVar = do
             sendMsg (NewGame pr py) cr
             sendMsg (NewGame pr py) cy
             game <- stToIO $ G.mkGame G.PlayerR
-            atomically $ modifyTVar' modelVar (\m -> m & battles %~ ((pr,py,game):))
+            atomically $ modifyTVar' modelVar
+                (\m -> m & battles %~ ((pr, py, cr, cy, game):))
             (b, c) <- stToIO $ fromGame game
             sendMsg (GenMove b c) cr
             loopRunner modelVar
