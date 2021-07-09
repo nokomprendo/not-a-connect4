@@ -35,8 +35,8 @@ library
 
     exposed-modules:    NaC4.Game
                         NaC4.Protocol
-                        NaC4.ProtocolImpl
                         NaC4.Client.Bot
+                        NaC4.Server.Config
                         NaC4.Server.HttpApp
                         NaC4.Server.Model
                         NaC4.Server.Runner
@@ -63,6 +63,6 @@ test-suite spec
     build-depends:      hspec, nac4
 
     other-modules:      NaC4.GameSpec
-                        NaC4.ProtocolImplSpec
+                        NaC4.ProtocolSpec
                         NaC4.Client.BotSpec
 

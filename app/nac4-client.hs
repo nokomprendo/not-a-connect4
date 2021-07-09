@@ -4,7 +4,6 @@
 import NaC4.Client.Bot
 import qualified NaC4.Game as G
 import NaC4.Protocol
-import NaC4.ProtocolImpl
 
 import Control.Monad.ST
 import qualified Data.Text as T
@@ -19,6 +18,7 @@ import System.Exit (die)
 main :: IO ()
 main = do
     args <- getArgs
+    -- TODO config bot
     bot <- BotMc 64 <$> createSystemRandom
     case args of
         [host, port, player, pool] -> 

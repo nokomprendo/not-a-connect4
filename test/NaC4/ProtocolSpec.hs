@@ -1,10 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module NaC4.ProtocolImplSpec (main, spec) where
+module NaC4.ProtocolSpec (main, spec) where
 
 import NaC4.Game as G
 import NaC4.Protocol as P
-import NaC4.ProtocolImpl
 
 import Control.Monad.ST
 import Data.Maybe

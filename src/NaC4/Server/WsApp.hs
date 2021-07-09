@@ -4,7 +4,6 @@ module NaC4.Server.WsApp  where
 
 -- import NaC4.Game
 import NaC4.Protocol as P
-import NaC4.ProtocolImpl as P
 import NaC4.Server.Model
 
 import Data.IORef

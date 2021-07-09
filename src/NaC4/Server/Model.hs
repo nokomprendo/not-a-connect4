@@ -32,10 +32,10 @@ newModel = Model M.empty [] [] 0
 addPlayer :: IORef Model -> P.Player -> WS.Connection -> IO Bool
 addPlayer modelRef player conn =  
     atomicModifyIORef' modelRef $ \m -> 
-        let cs = _clients m
-        in if M.member player cs
+        if M.member player $ m^.clients
             then (m, False)
-            else (m { _clients = M.insert player conn (_clients m)}, True) 
+            else (m & clients %~ M.insert player conn, True) 
+            -- else (m { _clients = M.insert player conn (_clients m)}, True) 
 
 -- cs <- map fst . M.toList . _clients <$> readIORef modelRef
 

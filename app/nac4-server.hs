@@ -1,5 +1,3 @@
-{-# LANGUAGE NumericUnderscores #-}
-
 import NaC4.Server.HttpApp
 import NaC4.Server.Model
 import NaC4.Server.Runner
@@ -17,7 +15,7 @@ main = do
     port <- read . fromMaybe "3000" <$> lookupEnv "PORT"
     putStrLn $ "listening port " ++ show port ++ "..."
     modelRef <- newIORef newModel
-    _ <- forkIO $ loopBattles 1_000_000 modelRef
+    _ <- forkIO $ loopRunner modelRef
     run port 
         $ logStdout 
         $ wsApp modelRef
