@@ -3,7 +3,7 @@ import NaC4.Server.Model
 import NaC4.Server.WsApp
 
 import Control.Concurrent (forkIO)
-import Data.IORef (newIORef)
+import Control.Concurrent.STM
 import Data.Maybe (fromMaybe)
 import Network.Wai.Handler.Warp (run)
 import Network.Wai.Middleware.RequestLogger (logStdout)
@@ -13,10 +13,10 @@ main :: IO ()
 main = do
     port <- read . fromMaybe "3000" <$> lookupEnv "PORT"
     putStrLn $ "listening port " ++ show port ++ "..."
-    modelRef <- newIORef newModel
-    _ <- forkIO $ loopRunner modelRef
+    modelVar <- newTVarIO newModel
+    _ <- forkIO $ loopRunner modelVar
     run port 
         $ logStdout 
-        $ wsApp modelRef
-        (httpApp modelRef)
+        $ wsApp modelVar
+        (httpApp modelVar)
 

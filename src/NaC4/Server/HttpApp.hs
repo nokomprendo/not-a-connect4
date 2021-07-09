@@ -9,10 +9,10 @@ module NaC4.Server.HttpApp (httpApp) where
 
 import NaC4.Server.Model
 
+import Control.Concurrent.STM
 import Control.Monad
 import Control.Monad.IO.Class
 import Data.Aeson
-import Data.IORef
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import GHC.Generics
@@ -27,20 +27,20 @@ type ServerApi
     =    ApiRoute
     :<|> HomeRoute
 
-handleServerApi :: IORef Model -> Server ServerApi
-handleServerApi modelRef
+handleServerApi :: TVar Model -> Server ServerApi
+handleServerApi modelVar
     =    handlePersons
-    :<|> handleHome modelRef
+    :<|> handleHome modelVar
 
 handlePersons :: Handler [Person]
 handlePersons = pure people
 
-handleHome :: IORef Model -> Handler [T.Text]
-handleHome modelRef = 
-    liftIO (map fst . M.toList . _clients <$> readIORef modelRef)
+handleHome :: TVar Model -> Handler [T.Text]
+handleHome modelVar = 
+    liftIO (map fst . M.toList . _clients <$> readTVarIO modelVar)
 
-httpApp :: IORef Model -> Application
-httpApp modelRef = serve (Proxy @ServerApi) (handleServerApi modelRef)
+httpApp :: TVar Model -> Application
+httpApp modelVar = serve (Proxy @ServerApi) (handleServerApi modelVar)
 
 
 -- HTML serialization of a list of persons

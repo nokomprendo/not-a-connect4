@@ -8,9 +8,9 @@ import NaC4.Protocol as P
 import NaC4.Server.Model
 
 import Control.Concurrent (threadDelay)
+import Control.Concurrent.STM
 import Control.Exception (finally)
 import Control.Monad (forever, when)
-import Data.IORef (readIORef, IORef, atomicModifyIORef')
 -- import Control.Monad.ST
 import qualified Data.Map.Strict as M
 -- import qualified Data.Text as T
@@ -24,25 +24,25 @@ import qualified Network.WebSockets as WS
 -- wsApp
 -------------------------------------------------------------------------------
 
-wsApp :: IORef Model -> Application -> Application
-wsApp modelRef = websocketsOr WS.defaultConnectionOptions (serverApp modelRef)
+wsApp :: TVar Model -> Application -> Application
+wsApp modelVar = websocketsOr WS.defaultConnectionOptions (serverApp modelVar)
 
-serverApp ::IORef Model -> WS.PendingConnection -> IO ()
-serverApp modelRef pc = do
+serverApp ::TVar Model -> WS.PendingConnection -> IO ()
+serverApp modelVar pc = do
     conn <- WS.acceptRequest pc
     msgToServer <- recvMsg conn
     case msgToServer of
         Just (Connect player pool) -> do
             T.putStrLn $ "connect " <> player <> " into " <> pool
-            ok <- addClient modelRef player conn
+            ok <- addClient modelVar player conn
             if ok 
             then sendMsg (Connected $ "hello " <> player) conn
             else sendMsg (NotConnected $ player <> " already used") conn
-            finally (run modelRef player conn) (stop modelRef player)
+            finally (run modelVar player conn) (stop modelVar player)
         _ -> T.putStrLn "unknown query"
 
-run :: IORef Model -> Player -> WS.Connection -> IO ()
-run modelRef player conn = forever $ do
+run :: TVar Model -> Player -> WS.Connection -> IO ()
+run modelVar player conn = forever $ do
     msg <- recvMsg conn
     case msg of
         Just (P.PlayMove m) -> do
@@ -50,8 +50,8 @@ run modelRef player conn = forever $ do
             putStrLn $ "playmove: " <> show m
         _ -> putStrLn "unknown message; skipping"
 
-stop :: IORef Model -> Player -> IO ()
-stop modelRef player = do
+stop :: TVar Model -> Player -> IO ()
+stop modelVar player = do
     -- TODO rmClient
     putStrLn "stop"
 
@@ -65,12 +65,12 @@ sleepTime = 1_000_000
 nbGames :: Int
 nbGames = 10 
 
-loopRunner :: IORef Model -> IO ()
-loopRunner modelRef = do
+loopRunner :: TVar Model -> IO ()
+loopRunner modelVar = do
     threadDelay sleepTime
 
     -- TODO
-    m <- readIORef modelRef
+    m <- readTVarIO modelVar
     print $ m^.waiting
     when (length (m^.waiting) >= 2) $ do 
         let pr = (m^.waiting) !! 0
@@ -79,9 +79,9 @@ loopRunner modelRef = do
         sendMsg (NewGame pr py) ((m^.clients) M.! py)
         putStrLn "TODO 2 clients waiting"
 
-    atomicModifyIORef' modelRef (\m -> (m&counter+~1, m^.counter)) >>= print
+    -- TODO atomicModifyIORef' modelVar (\m -> (m&counter+~1, m^.counter)) >>= print
 
-    loopRunner modelRef
+    loopRunner modelVar
 
 -------------------------------------------------------------------------------
 -- ws
