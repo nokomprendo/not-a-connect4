@@ -33,8 +33,8 @@ serverApp modelVar pc = do
     conn <- WS.acceptRequest pc
     msgToServer <- recvMsg conn
     case msgToServer of
-        Just (Connect player pool) -> do
-            T.putStrLn $ "connect " <> player <> " into " <> pool
+        Just (Connect player) -> do
+            T.putStrLn $ "connect " <> player
             ok <- addClient modelVar player conn
             if ok 
             then do

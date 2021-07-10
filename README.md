@@ -19,7 +19,7 @@ Puissance 4 en réseau pour comparer des IA.
 - s2c/c2s: server-to-client/client-to-server
 
 ```
-c2s: connect <player-name> <pool> \n
+c2s: connect <player-name> \n
 s2c: connected [message] \n                 ; message d'accueil
 s2c: not-connected [message] \n             ; message d'erreur
 
@@ -32,12 +32,11 @@ s2c: endgame BOARD STATUS \n
 ## Monitoring serveur
 
 ```
-- pour chaque pool: nom, description
-    - pour chaque partie terminée: <playerR> <playerY> STATUS HISTORY TIME TIME
-    - pour chaque joueur: nbparties, ratio win/lose/draw, durée moyenne
+- pour chaque battle terminée: <playerR> <playerY> <nbgames> TIME TIME
+- pour chaque joueur: nbparties, ratio win/lose/draw, durée moyenne
 ```
 
-- HISTORY: ab...        ; coup a, puis coup b puis, ...
+- battle = ensemble de parties entre 2 joueurs (en alternant le 1er coup)
 - TIME: t               ; temps de calcul cumulé du joueur, en secondes
 - API JSON ?
 - page web ?
@@ -87,8 +86,8 @@ nix-shell --run "cabal run nac4-client not-a-connect4.herokuapp.com 80 myname ze
 
 - n joueurs via server
 - page web SSE
-- channels
-- stocker les résultats dans une BD
+- room ?
+- postgresql ?
 
 ## Changelog
 

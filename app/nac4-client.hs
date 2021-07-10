@@ -21,17 +21,18 @@ main = do
     -- TODO config bot
     bot <- BotMc 64 <$> createSystemRandom
     case args of
-        [host, port, player, pool] -> 
+        [host, port, player] -> 
             withSocketsDo $ WS.runClient host (read port) "" 
-                $ clientApp bot (T.pack player) (T.pack pool)
+                $ clientApp bot (T.pack player)
         _ -> do
             progName <- getProgName
-            putStrLn $ "usage: " <> progName <> " host port player pool"
-            putStrLn $ "example: " <> progName <> " 127.0.0.1 3000 myname zepool"
+            putStrLn $ "usage: " <> progName <> " host port player \n"
+            putStrLn $ "example: " <> progName <> " 127.0.0.1 3000 myname "
+            putStrLn $ "example: " <> progName <> " not-a-connect4.herokuapp.com 80 myname "
 
-clientApp :: (Bot RealWorld b) => b -> Player -> Pool -> WS.ClientApp ()
-clientApp bot player pool conn = do
-    sendMsg (Connect player pool) conn
+clientApp :: (Bot RealWorld b) => b -> Player -> WS.ClientApp ()
+clientApp bot player conn = do
+    sendMsg (Connect player) conn
     msgToClient <- recvMsg conn
     case msgToClient of
         Just (Connected msg) -> do

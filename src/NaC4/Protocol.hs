@@ -15,7 +15,6 @@ import Text.Read (readMaybe)
 -------------------------------------------------------------------------------
 
 type Player = T.Text
-type Pool = T.Text
 type Move = Int
 type Board = T.Text
 
@@ -27,7 +26,7 @@ data Color
 type Status = G.Status
 
 data MsgToServer
-    = Connect Player Pool
+    = Connect Player 
     | PlayMove Move
     deriving (Eq, Show)
 
@@ -45,7 +44,7 @@ data MsgToClient
 
 parseMsgToServer :: T.Text -> Maybe MsgToServer
 parseMsgToServer input = case T.words input of
-    ["connect", player, pool] -> Just $ Connect player pool
+    ["connect", player] -> Just $ Connect player
     ["playmove", move] -> PlayMove <$> readMaybe (T.unpack move)
     _ -> Nothing
 
@@ -76,7 +75,7 @@ parseStatus _ = Nothing
 -------------------------------------------------------------------------------
 
 fmtMsgToServer :: MsgToServer -> T.Text
-fmtMsgToServer (Connect player pool) = fmtMsg ["connect", player, pool]
+fmtMsgToServer (Connect player) = fmtMsg ["connect", player]
 fmtMsgToServer (PlayMove move) = fmtMsg ["playmove", T.pack (show move)]
 
 fmtMsgToClient :: MsgToClient -> T.Text
