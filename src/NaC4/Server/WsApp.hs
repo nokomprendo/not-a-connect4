@@ -49,8 +49,8 @@ run modelVar user conn = forever $ do
     case msg of
         Just (P.PlayMove move) -> do
             T.putStrLn $ "playmove: " <> user <> " plays " <> T.pack (show move)
-            m <- readTVarIO modelVar
-            let battle = m^.mBattles & find (isInBattle user)
+            m1 <- readTVarIO modelVar
+            let battle = m1^.mBattles & find (isInBattle user)
             case battle of
                 Nothing -> T.putStrLn $ "invalid playmove from " <> user
                 Just (Battle userR userY g n) -> do
@@ -60,19 +60,21 @@ run modelVar user conn = forever $ do
                     then do
                         g1 <- stToIO $ G.playJ move g
                         -- TODO refactor ?
-                        atomically $ modifyTVar' modelVar $ \mm -> 
-                            mm & mBattles %~ map (\bt -> 
+                        atomically $ modifyTVar' modelVar $ \m -> 
+                            m & mBattles %~ map (\bt -> 
                                 if userR==bt^.bUserR && userY==bt^.bUserY
                                 then Battle userR userY g1 n
                                 else bt)
-                        let connR = (m^.mClients) M.! userR
-                            connY = (m^.mClients) M.! userY
+                        let connR = (m1^.mClients) M.! userR
+                            connY = (m1^.mClients) M.! userY
                         let conn1 = if G._currentPlayer g1 == G.PlayerR
                                     then connR else connY
                         (board, player, status) <- stToIO $ P.fromGame g1
                         if G.isRunning g1
                         then sendMsg (GenMove board player status) conn1
                         else do
+                            atomically $ modifyTVar' modelVar $ \m -> 
+                                m & mResults %~ (Result userR userY board status :)
                             print status
                             sendMsg (EndGame board PlayerR status) connR
                             sendMsg (EndGame board PlayerY status) connY
