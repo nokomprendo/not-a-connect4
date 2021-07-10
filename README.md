@@ -15,7 +15,6 @@ Puissance 4 en réseau pour comparer des IA.
 - STATUS : WinR | WinY | Tie | PlayR | PlayY
 - move invalide -> annulation partie courante et fin
 - déconnexion -> annulation partie courante et fin
-- TODO: gestion du temps (par coup ? par partie ? ...)
 - s2c/c2s: server-to-client/client-to-server
 
 ```
@@ -84,10 +83,14 @@ nix-shell --run "cabal run nac4-client not-a-connect4.herokuapp.com 80 myname ze
 
 ## Roadmap
 
+- gestion des résultats (stockage, affichage)
+- plusieurs parties dans un battle
 - n joueurs via server
 - page web SSE
-- room ?
-- postgresql ?
+
+- gestion de salons de jeu ?
+- stockage des resultats en bdd ?
+- gestion du temps ?
 
 ## Changelog
 

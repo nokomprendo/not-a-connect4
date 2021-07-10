@@ -17,16 +17,15 @@ data Model = Model
     { _clients :: M.Map User WS.Connection
     , _battles :: [Battle]
     , _waiting :: [User]
-    , _counter :: Int
     }
 
 makeLenses ''Model
 
 isInBattle :: User -> Battle -> Bool
-isInBattle p (pr, py, _, _, _) = p == pr || p == py
+isInBattle user (userR, userY, _, _, _) = user == userR || user == userY
 
 newModel :: Model
-newModel = Model M.empty [] [] 0
+newModel = Model M.empty [] []
 
 addClient :: TVar Model -> User -> WS.Connection -> IO Bool
 addClient modelVar user conn =  atomically $ do
