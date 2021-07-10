@@ -109,4 +109,5 @@ nix-shell --run "cabal run nac4-client not-a-connect4.herokuapp.com 80 myname ze
 - 2 joueurs clients via server
 - déploiement docker/heroku
 - configuration du bot dans le client
+- api json
 

@@ -1,10 +1,14 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module NaC4.Game where
 
 import Control.Monad.ST
 import qualified Data.Vector.Unboxed as U
 
+import Data.Aeson
 import Data.Massiv.Array
 import Data.Massiv.Array.Unsafe
+import GHC.Generics
 
 nI, nJ :: Int
 (nI, nJ) = (6, 7)
@@ -21,7 +25,8 @@ nextPlayer :: Player -> Player
 nextPlayer PlayerR = PlayerY
 nextPlayer PlayerY = PlayerR
 
-data Status = PlayR | PlayY | Tie | WinR | WinY deriving (Eq, Show)
+data Status = PlayR | PlayY | Tie | WinR | WinY deriving (Eq, Generic, Show)
+instance ToJSON Status
 
 type Board s = MArray s B Ix2 Cell
 

@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module NaC4.Server.Model where
@@ -7,41 +9,71 @@ import NaC4.Protocol as P
 
 import Control.Concurrent.STM
 import Control.Monad.ST
+import qualified Data.Aeson as A
 import qualified Data.Map.Strict as M
+import GHC.Generics
 import Lens.Micro.Platform
 import qualified Network.WebSockets as WS
 
-type Battle = (User, User, WS.Connection, WS.Connection, Game RealWorld)
+data Battle = Battle
+    { _bUserR       :: User
+    , _bUserY       :: User
+    , _bGame        :: Game RealWorld
+    , _bNbGgames    :: Int
+    }
+makeLenses ''Battle
+
+data Result = Result
+    { _rUserR    :: User
+    , _rUserY    :: User
+    , _rBoard    :: P.Board
+    , _rStatus   :: G.Status
+    } deriving (Generic)
+instance A.ToJSON Result
+makeLenses ''Result
+
+data UserStats = UserStats
+    { _usWins    :: Int
+    , _usLoses   :: Int
+    , _usTies    :: Int
+    , _usGames   :: Int
+    } deriving (Generic)
+makeLenses ''UserStats
+instance A.ToJSON UserStats
+-- instance A.ToJSON (M.Map User UserStats)
 
 data Model = Model
-    { _clients :: M.Map User WS.Connection
-    , _battles :: [Battle]
-    , _waiting :: [User]
+    { _mClients     :: M.Map User WS.Connection
+    , _mWaiting     :: [User]
+    , _mNbGames     :: M.Map (User, User) Int
+    , _mBattles     :: [Battle]
+    , _mResults     :: [Result]
+    , _mUserStats   :: M.Map User UserStats
     }
-
 makeLenses ''Model
 
-isInBattle :: User -> Battle -> Bool
-isInBattle user (userR, userY, _, _, _) = user == userR || user == userY
-
 newModel :: Model
-newModel = Model M.empty [] []
+newModel = Model M.empty [] M.empty [] [] M.empty
 
 addClient :: TVar Model -> User -> WS.Connection -> IO Bool
 addClient modelVar user conn =  atomically $ do
     m <- readTVar modelVar
-    if M.member user $ m^.clients
+    if M.member user (m^.mClients)
         then return False
         else do 
-            writeTVar modelVar (m & clients %~ M.insert user conn
-                                  & waiting %~ (user:))
+            writeTVar modelVar (m & mClients %~ M.insert user conn
+                                  & mWaiting %~ (user:))
             return True
 
-rmClient :: TVar Model -> User -> IO ()
-rmClient modelVar user = atomically $ do
+delClient :: TVar Model -> User -> IO ()
+delClient modelVar user = atomically $ do
     m <- readTVar modelVar
     -- TODO stop battle and put opponent in waiting
-    writeTVar modelVar (m & clients %~ M.delete user
-                          & battles %~ filter (not . isInBattle user)
-                          & waiting %~ filter (/=user))
+    writeTVar modelVar (m & mClients %~ M.delete user
+                          & mBattles %~ filter (not . isInBattle user)
+                          & mWaiting %~ filter (/=user))
+
+isInBattle :: User -> Battle -> Bool
+isInBattle user battle = user == battle^.bUserR || user == battle^.bUserY
+
 

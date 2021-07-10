@@ -50,10 +50,10 @@ run modelVar user conn = forever $ do
         Just (P.PlayMove move) -> do
             T.putStrLn $ "playmove: " <> user <> " plays " <> T.pack (show move)
             m <- readTVarIO modelVar
-            let battle = m^.battles & find (isInBattle user)
+            let battle = m^.mBattles & find (isInBattle user)
             case battle of
                 Nothing -> T.putStrLn $ "invalid playmove from " <> user
-                Just (userR, userY, connR, connY, g) -> do
+                Just (Battle userR userY g n) -> do
                     -- TODO check user
                     if _currentPlayer g == G.PlayerR && user == userR
                         || _currentPlayer g == G.PlayerY && user == userY
@@ -61,10 +61,12 @@ run modelVar user conn = forever $ do
                         g1 <- stToIO $ G.playJ move g
                         -- TODO refactor ?
                         atomically $ modifyTVar' modelVar $ \mm -> 
-                            mm & battles %~ map (\bt@(userRi,userYi,_,_,_) -> 
-                                if userR==userRi && userY==userYi
-                                then (userR,userY,connR,connY,g1)
+                            mm & mBattles %~ map (\bt -> 
+                                if userR==bt^.bUserR && userY==bt^.bUserY
+                                then Battle userR userY g1 n
                                 else bt)
+                        let connR = (m^.mClients) M.! userR
+                            connY = (m^.mClients) M.! userY
                         let conn1 = if G._currentPlayer g1 == G.PlayerR
                                     then connR else connY
                         (board, player, status) <- stToIO $ P.fromGame g1
@@ -74,13 +76,15 @@ run modelVar user conn = forever $ do
                             print status
                             sendMsg (EndGame board PlayerR status) connR
                             sendMsg (EndGame board PlayerY status) connY
+                            -- TODO repeat battle
+
                     else T.putStrLn $ "not your turn " <> user
                         -- TODO play game
         _ -> putStrLn "unknown message; skipping"
 
 stop :: TVar Model -> User -> IO ()
 stop modelVar user = do
-    rmClient modelVar user
+    delClient modelVar user
     putStrLn "stop"
 
 -------------------------------------------------------------------------------
@@ -99,10 +103,10 @@ loopRunner modelVar = do
 
     res <- atomically $ do
         m <- readTVar modelVar
-        case m^.waiting of
+        case m^.mWaiting of
             (userR:userY:ws) -> do
-                writeTVar modelVar (m & waiting .~ ws)
-                let cs = m ^. clients
+                writeTVar modelVar (m & mWaiting .~ ws)
+                let cs = m ^. mClients
                 return $ Just (userR, userY, cs M.! userR, cs M.! userY)
             _ -> return Nothing
 
@@ -114,7 +118,7 @@ loopRunner modelVar = do
             sendMsg (NewGame userR userY) playerY
             game <- stToIO $ G.mkGame G.PlayerR
             atomically $ modifyTVar' modelVar
-                (\m -> m & battles %~ ((userR, userY, playerR, playerY, game):))
+                (\m -> m & mBattles %~ (Battle userR userY game 0 :))
             (b, p, s) <- stToIO $ fromGame game
             sendMsg (GenMove b p s) playerR
             loopRunner modelVar
