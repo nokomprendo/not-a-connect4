@@ -14,35 +14,49 @@ import qualified Network.WebSockets as WS
 import System.Random.MWC
 import System.Environment (getArgs, getProgName)
 import System.Exit (die)
+import Text.Read
+
+type BotFunc = G.Game RealWorld -> ST RealWorld Int
 
 main :: IO ()
 main = do
     args <- getArgs
-    -- TODO config bot
-    bot <- BotMc 64 <$> createSystemRandom
     case args of
-        [host, port, player] -> 
-            withSocketsDo $ WS.runClient host (read port) "" 
-                $ clientApp bot (T.pack player)
-        _ -> do
-            progName <- getProgName
-            putStrLn $ "usage: " <> progName <> " host port player \n"
-            putStrLn $ "example: " <> progName <> " 127.0.0.1 3000 myname "
-            putStrLn $ "example: " <> progName <> " not-a-connect4.herokuapp.com 80 myname "
+        (host:port:player:botArgs) -> do
+            mBotFunc <- mkBotFunc botArgs
+            case mBotFunc of
+                Just botFunc -> withSocketsDo $ WS.runClient host (read port) "" 
+                                              $ clientApp botFunc (T.pack player)
+                Nothing -> usage
+        _ -> usage
 
-clientApp :: (Bot RealWorld b) => b -> Player -> WS.ClientApp ()
-clientApp bot player conn = do
+mkBotFunc :: [String] -> IO (Maybe BotFunc)
+mkBotFunc ["random"] = Just . genmove . BotRandom <$> createSystemRandom
+mkBotFunc ["mc", nsimsStr] = do
+    gen <- createSystemRandom
+    return $ do
+        nsims <- readMaybe nsimsStr
+        Just (genmove $ BotMc nsims gen)
+mkBotFunc ["mcts", nsimsStr] = do
+    gen <- createSystemRandom
+    return $ do
+        nsims <- readMaybe nsimsStr
+        Just (genmove $ BotMcts nsims gen)
+mkBotFunc _ = return Nothing
+
+clientApp :: BotFunc -> Player -> WS.ClientApp ()
+clientApp botFunc player conn = do
     sendMsg (Connect player) conn
     msgToClient <- recvMsg conn
     case msgToClient of
         Just (Connected msg) -> do
             T.putStrLn $ "connected: " <> msg
-            run bot conn
+            run botFunc conn
         Just (NotConnected msg) -> die ("not-connected: " <> T.unpack msg)
         _ -> die "connection failed"
 
-run :: (Bot RealWorld b) => b -> WS.ClientApp ()
-run bot conn = do
+run :: BotFunc -> WS.ClientApp ()
+run botFunc conn = do
     msgToClient <- recvMsg conn
     case msgToClient of
         Just (NewGame pr py) -> T.putStrLn $ "newgame: " <> pr <> " " <> py
@@ -52,7 +66,7 @@ run bot conn = do
                 Nothing -> T.putStrLn "genmove: error"
                 Just game -> do
                     T.putStrLn $ "genmove: " <> b <> " " <> fmtColor c
-                    k <- stToIO $ genmove bot game
+                    k <- stToIO $ botFunc game
                     let j = G._moves game U.! k
                     T.putStrLn $ "playmove: " <> T.pack (show j)
                     sendMsg (PlayMove  j) conn
@@ -60,11 +74,18 @@ run bot conn = do
             T.putStrLn $ "endgame: " <> b <> " " <> fmtStatus s
             die "TODO handle multiple games"
         _ -> die "unknown error"
-    run bot conn
+    run botFunc conn
 
 recvMsg :: WS.ClientApp (Maybe MsgToClient)
 recvMsg conn = parseMsgToClient . WS.fromLazyByteString <$> WS.receiveData conn
 
 sendMsg :: MsgToServer -> WS.ClientApp ()
 sendMsg msg conn = WS.sendTextData conn $ fmtMsgToServer msg
+
+usage :: IO ()
+usage = do
+    progName <- getProgName
+    putStrLn $ "usage: " <> progName <> " host port player bot [botArgs]\n"
+    putStrLn $ "example: " <> progName <> " 127.0.0.1 3000 myname mcts 512"
+    putStrLn $ "example: " <> progName <> " not-a-connect4.herokuapp.com 80 myname mc 64"
 
