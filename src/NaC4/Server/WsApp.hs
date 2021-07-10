@@ -43,21 +43,21 @@ serverApp modelVar pc = do
             else sendMsg (NotConnected $ user <> " already used") conn
         _ -> T.putStrLn "unknown query"
 
+-- TODO refactor
 run :: TVar Model -> User -> WS.Connection -> IO ()
 run modelVar user conn = forever $ do
     msg <- recvMsg conn
     case msg of
         Just (P.PlayMove move) -> do
-            -- T.putStrLn $ "playmove: " <> user <> " plays " <> T.pack (show move)
             m1 <- readTVarIO modelVar
             let battle = m1^.mBattles & find (isInBattle user)
             case battle of
                 Nothing -> T.putStrLn $ "invalid playmove from " <> user
-                Just (Battle userR userY g n) -> do
-                    -- TODO check user
-                    if _currentPlayer g == G.PlayerR && user == userR
-                        || _currentPlayer g == G.PlayerY && user == userY
-                    then do
+                Just bt0@(Battle userR userY g n) -> do
+                    if (_currentPlayer g == G.PlayerR && user /= userR)
+                        || (_currentPlayer g == G.PlayerY && user /= userY)
+                    then T.putStrLn $ "not your turn " <> user
+                    else do
                         g1 <- stToIO $ G.playJ move g
                         -- TODO refactor ?
                         atomically $ modifyTVar' modelVar $ \m -> 
@@ -73,22 +73,17 @@ run modelVar user conn = forever $ do
                         if G.isRunning g1
                         then sendMsg (GenMove board player status) conn1
                         else do
-                            atomically $ modifyTVar' modelVar $ \m -> 
-                                m & mResults %~ (Result userR userY board status :)
                             T.putStrLn $ userR <> " vs " <> userY 
                                 <> " -> " <> T.pack (show status)
                             sendMsg (EndGame board PlayerR status) connR
                             sendMsg (EndGame board PlayerY status) connY
-                            -- TODO repeat battle
-
-                    else T.putStrLn $ "not your turn " <> user
-                        -- TODO play game
+                            finishBattle modelVar bt0 board status
         _ -> putStrLn "unknown message; skipping"
 
 stop :: TVar Model -> User -> IO ()
 stop modelVar user = do
     delClient modelVar user
-    putStrLn "stop"
+    T.putStrLn $ "bye " <> user
 
 -------------------------------------------------------------------------------
 -- runner
@@ -97,6 +92,7 @@ stop modelVar user = do
 sleepTime :: Int
 sleepTime = 1_000_000 
 
+-- TODO select battles
 loopRunner :: TVar Model -> IO ()
 loopRunner modelVar = do
     threadDelay sleepTime
@@ -113,7 +109,7 @@ loopRunner modelVar = do
     case res of
         Nothing -> loopRunner modelVar
         Just (userR, userY, playerR, playerY) -> do
-            T.putStrLn $ "newgame: " <> userR <> " vs " <> userY
+            -- T.putStrLn $ "newgame: " <> userR <> " vs " <> userY
             sendMsg (NewGame userR userY) playerR
             sendMsg (NewGame userR userY) playerY
             game <- stToIO $ G.mkGame G.PlayerR

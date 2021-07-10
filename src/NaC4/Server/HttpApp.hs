@@ -19,6 +19,9 @@ import Lucid
 import Servant
 import Servant.HTML.Lucid
 
+nbResults :: Int
+nbResults = 100
+
 newtype HomeData = HomeData ([Result], M.Map User UserStats)
 
 type ApiResultsRoute = "api" :> "results" :> Get '[JSON] [Result]
@@ -76,9 +79,9 @@ instance ToHtml HomeData where
                     (u : map (T.pack . show) 
                         [us^.usWins, us^.usLoses, us^.usTies, us^.usGames])
 
-            h2_ "Results"
+            h2_ $ toHtml $ "Results (" <> T.pack (show nbResults) <> " last ones)"
             table_ $ do
                 tr_ $ mapM_ th_ [ "red", "yellow", "status", "board" ]
-                forM_ results $ \r -> tr_ $ mapM_ (td_ . toHtml) 
+                forM_ (take nbResults results) $ \r -> tr_ $ mapM_ (td_ . toHtml) 
                     [ r^.rUserR, r^.rUserY, T.pack (show $ r^.rStatus), r^.rBoard ]
 

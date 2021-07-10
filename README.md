@@ -73,9 +73,8 @@ nix-shell --run "cabal run nac4-client not-a-connect4.herokuapp.com 80 myname mc
 
 ## Roadmap
 
-- gestion des résultats par user
-- plusieurs parties 
-- n joueurs via server
+- selection des users
+- refactoring wsapp
 - maj de la page web via SSE ?
 - gestion de salons de jeu ?
 - stockage des resultats en bdd ?
@@ -100,4 +99,5 @@ nix-shell --run "cabal run nac4-client not-a-connect4.herokuapp.com 80 myname mc
 - configuration du bot dans le client
 - api json
 - results + http
+- repetitions des parties + stats
 
