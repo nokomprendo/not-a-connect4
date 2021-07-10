@@ -14,28 +14,21 @@ import Text.Read (readMaybe)
 -- types
 -------------------------------------------------------------------------------
 
-type Player = T.Text
+type User = T.Text
 type Move = Int
 type Board = T.Text
 
-data Color
-    = ColorR
-    | ColorY
-    deriving (Eq, Show)
-
-type Status = G.Status
-
 data MsgToServer
-    = Connect Player 
+    = Connect User 
     | PlayMove Move
     deriving (Eq, Show)
 
 data MsgToClient
     = Connected T.Text
     | NotConnected T.Text
-    | NewGame Player Player
-    | GenMove Board Color
-    | EndGame Board Status
+    | NewGame User User
+    | GenMove Board G.Player G.Status
+    | EndGame Board G.Player G.Status
     deriving (Eq, Show)
 
 -------------------------------------------------------------------------------
@@ -44,7 +37,7 @@ data MsgToClient
 
 parseMsgToServer :: T.Text -> Maybe MsgToServer
 parseMsgToServer input = case T.words input of
-    ["connect", player] -> Just $ Connect player
+    ["connect", user] -> Just $ Connect user
     ["playmove", move] -> PlayMove <$> readMaybe (T.unpack move)
     _ -> Nothing
 
@@ -53,16 +46,16 @@ parseMsgToClient input = case T.words input of
     ("connected":xs) -> Just $ Connected (T.unwords xs)
     ("not-connected":xs) -> Just $ NotConnected (T.unwords xs)
     ["newgame", pr, py] -> Just $ NewGame pr py 
-    ["genmove", board, color] -> GenMove board <$> parseColor color
-    ["endgame", b, res] -> EndGame b <$> parseStatus res
+    ["genmove", b, p, s] -> GenMove b <$> parsePlayer p <*> parseStatus s
+    ["endgame", b, p, s] -> EndGame b <$> parsePlayer p <*> parseStatus s
     _ -> Nothing
 
-parseColor :: T.Text -> Maybe Color
-parseColor "R" = Just ColorR
-parseColor "Y" = Just ColorY
-parseColor _ = Nothing
+parsePlayer :: T.Text -> Maybe G.Player
+parsePlayer "R" = Just G.PlayerR
+parsePlayer "Y" = Just G.PlayerY
+parsePlayer _ = Nothing
 
-parseStatus :: T.Text -> Maybe Status
+parseStatus :: T.Text -> Maybe G.Status
 parseStatus "WinR" = Just G.WinR
 parseStatus "WinY" = Just G.WinY
 parseStatus "Tie" = Just G.Tie
@@ -75,21 +68,21 @@ parseStatus _ = Nothing
 -------------------------------------------------------------------------------
 
 fmtMsgToServer :: MsgToServer -> T.Text
-fmtMsgToServer (Connect player) = fmtMsg ["connect", player]
+fmtMsgToServer (Connect user) = fmtMsg ["connect", user]
 fmtMsgToServer (PlayMove move) = fmtMsg ["playmove", T.pack (show move)]
 
 fmtMsgToClient :: MsgToClient -> T.Text
 fmtMsgToClient (Connected msg) = fmtMsg ["connected", msg]
 fmtMsgToClient (NotConnected msg) = fmtMsg ["not-connected", msg]
 fmtMsgToClient (NewGame pr py) = fmtMsg ["newgame", pr, py]
-fmtMsgToClient (GenMove b c) = fmtMsg ["genmove", b, fmtColor c]
-fmtMsgToClient (EndGame b res) = fmtMsg ["endgame", b, fmtStatus res]
+fmtMsgToClient (GenMove b p s) = fmtMsg ["genmove", b, fmtPlayer p, fmtStatus s]
+fmtMsgToClient (EndGame b p s) = fmtMsg ["endgame", b, fmtPlayer p, fmtStatus s]
 
-fmtColor :: Color -> T.Text
-fmtColor ColorR = "R"
-fmtColor ColorY = "Y"
+fmtPlayer :: G.Player -> T.Text
+fmtPlayer G.PlayerR = "R"
+fmtPlayer G.PlayerY = "Y"
 
-fmtStatus :: Status -> T.Text
+fmtStatus :: G.Status -> T.Text
 fmtStatus G.WinR = "WinR"
 fmtStatus G.WinY = "WinY"
 fmtStatus G.Tie = "Tie"
@@ -108,23 +101,21 @@ fmtCell G.CellE = "."
 fmtCell G.CellR = "R"
 fmtCell G.CellY = "Y"
 
-fromGame :: G.Game s -> ST s (Board, Color)
+fromGame :: G.Game s -> ST s (Board, G.Player, G.Status)
 fromGame g = do
     b <- T.pack . concatMap fmtCell . A.toList <$> A.freezeS (G._cells g)
-    let c = if G._currentPlayer g == G.PlayerR then ColorR else ColorY
-    return (b, c)
+    return (b, G._currentPlayer g, G._status g)
 
 parseCell :: Char -> G.Cell
 parseCell 'R' = G.CellR
 parseCell 'Y' = G.CellY
 parseCell _ = G.CellE
 
-toGame :: Board -> Color -> ST s (Maybe (G.Game s))
-toGame b c 
+toGame :: Board -> G.Player -> G.Status -> ST s (Maybe (G.Game s))
+toGame b p s 
     | T.length b /= G.nI*G.nJ = return Nothing
     | otherwise = do
-        let (s, p) = if c == ColorR then (G.PlayR, G.PlayerR) else (G.PlayY, G.PlayerY)
-            go acc [] = acc
+        let go acc [] = acc
             go acc xs = 
                 let (x1, x2) = splitAt G.nJ xs
                 in go (acc++[x1]) x2

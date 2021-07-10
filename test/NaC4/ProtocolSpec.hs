@@ -18,8 +18,8 @@ spec = do
     describe "parseMsgToServer" $ do
 
         it "connect 1" $ do
-            parseMsgToServer "connect foo bar \n" `shouldBe` Just (Connect "foo" "bar")
-            parseMsgToServer "connect foo \n" `shouldBe` Nothing
+            parseMsgToServer "connect foo bar \n" `shouldBe` Nothing
+            parseMsgToServer "connect foo \n" `shouldBe` Just (Connect "foo")
             parseMsgToServer "connect foo bar baz \n" `shouldBe` Nothing
 
         it "playmove 1" $ do
@@ -43,23 +43,23 @@ spec = do
             parseMsgToClient "newgame foo bar baz \n" `shouldBe` Nothing
 
         it "genmove 1" $ do
-            parseMsgToClient "genmove board R \n" `shouldBe` Just (GenMove "board" ColorR)
-            parseMsgToClient "genmove board Y \n" `shouldBe` Just (GenMove "board" ColorY)
-            parseMsgToClient "genmove board Z \n" `shouldBe` Nothing
+            parseMsgToClient "genmove board R Tie \n" `shouldBe` Just (GenMove "board" PlayerR Tie)
+            parseMsgToClient "genmove board Y WinR \n" `shouldBe` Just (GenMove "board" PlayerY WinR)
+            parseMsgToClient "genmove board Z Tie \n" `shouldBe` Nothing
             parseMsgToClient "genmove board Y foo \n" `shouldBe` Nothing
 
         it "endgame 1" $ do
-            parseMsgToClient "endgame board WinR \n" `shouldBe` Just (EndGame "board" G.WinR)
-            parseMsgToClient "endgame board WinY \n" `shouldBe` Just (EndGame "board" G.WinY)
-            parseMsgToClient "endgame board PlayR \n" `shouldBe` Just (EndGame "board" G.PlayR)
-            parseMsgToClient "endgame board PlayY \n" `shouldBe` Just (EndGame "board" G.PlayY)
-            parseMsgToClient "endgame board Tie \n" `shouldBe` Just (EndGame "board" G.Tie)
-            parseMsgToClient "endgame board foo \n" `shouldBe` Nothing
+            parseMsgToClient "endgame board R WinR \n" `shouldBe` Just (EndGame "board" PlayerR WinR)
+            parseMsgToClient "endgame board R WinY \n" `shouldBe` Just (EndGame "board" PlayerR WinY)
+            parseMsgToClient "endgame board Y PlayR \n" `shouldBe` Just (EndGame "board" PlayerY PlayR)
+            parseMsgToClient "endgame board Y PlayY \n" `shouldBe` Just (EndGame "board" PlayerY PlayY)
+            parseMsgToClient "endgame board Y Tie \n" `shouldBe` Just (EndGame "board" PlayerY Tie)
+            parseMsgToClient "endgame board Y foo \n" `shouldBe` Nothing
 
     describe "fmtMsgToServer" $ do
 
         it "connect 1" $ do
-            fmtMsgToServer (Connect "foo" "bar")`shouldBe` "connect foo bar \n"
+            fmtMsgToServer (Connect "foo")`shouldBe` "connect foo \n"
 
         it "playmove 1" $ do
             fmtMsgToServer (PlayMove 2)`shouldBe` "playmove 2 \n"
@@ -77,25 +77,26 @@ spec = do
             fmtMsgToClient (NewGame "foo" "bar")`shouldBe` "newgame foo bar \n"
 
         it "genmove 1" $ do
-            fmtMsgToClient (GenMove "board" ColorR)`shouldBe` "genmove board R \n"
-            fmtMsgToClient (GenMove "board" ColorY)`shouldBe` "genmove board Y \n"
+            fmtMsgToClient (GenMove "board" PlayerR Tie)`shouldBe` "genmove board R Tie \n"
+            fmtMsgToClient (GenMove "board" PlayerY WinR)`shouldBe` "genmove board Y WinR \n"
 
         it "endgame 1" $ do
-            fmtMsgToClient (EndGame "board" G.WinR)`shouldBe` "endgame board WinR \n"
-            fmtMsgToClient (EndGame "board" G.WinY)`shouldBe` "endgame board WinY \n"
-            fmtMsgToClient (EndGame "board" G.PlayR)`shouldBe` "endgame board PlayR \n"
-            fmtMsgToClient (EndGame "board" G.PlayY)`shouldBe` "endgame board PlayY \n"
-            fmtMsgToClient (EndGame "board" G.Tie)`shouldBe` "endgame board Tie \n"
+            fmtMsgToClient (EndGame "board" PlayerR WinR)`shouldBe` "endgame board R WinR \n"
+            fmtMsgToClient (EndGame "board" PlayerR WinY)`shouldBe` "endgame board R WinY \n"
+            fmtMsgToClient (EndGame "board" PlayerR PlayR)`shouldBe` "endgame board R PlayR \n"
+            fmtMsgToClient (EndGame "board" PlayerY PlayY)`shouldBe` "endgame board Y PlayY \n"
+            fmtMsgToClient (EndGame "board" PlayerY Tie)`shouldBe` "endgame board Y Tie \n"
 
     describe "fromGame" $ do
 
         it "1" $ do
-            (b, c) <- stToIO (mkGame PlayerR 
+            (b, p, s) <- stToIO (mkGame PlayerR 
                         >>= playK 2 >>= playK 4
                         >>= playK 2 >>= playK 4
                         >>= playK 2 
                         >>= fromGame)
-            c `shouldBe` ColorY
+            p `shouldBe` PlayerY
+            s `shouldBe` PlayY
             b `shouldBe`
                 "..R.Y..\
                 \..R.Y..\
@@ -113,8 +114,9 @@ spec = do
                     \.......\
                     \.......\
                     \......."
-                c = ColorY
-            Just g <- stToIO (toGame b c)
+                p = PlayerY
+                s = PlayY
+            Just g <- stToIO (toGame b p s)
             _currentPlayer g `shouldBe` PlayerY
 
         it "2" $ do
@@ -124,8 +126,10 @@ spec = do
                      \.......\
                      \.......\
                      \......."
-                c1 = ColorY
-            (b2, c2) <- stToIO (toGame b1 c1 >>= fromGame . fromJust)
+                p1 = PlayerY
+                s1 = PlayY
+            (b2, p2, s2) <- stToIO (toGame b1 p1 s1 >>= fromGame . fromJust)
             b1 `shouldBe` b2
-            c1 `shouldBe` c2
+            p1 `shouldBe` p2
+            s1 `shouldBe` s2
 

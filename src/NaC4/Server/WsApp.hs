@@ -33,54 +33,54 @@ serverApp modelVar pc = do
     conn <- WS.acceptRequest pc
     msgToServer <- recvMsg conn
     case msgToServer of
-        Just (Connect player) -> do
-            T.putStrLn $ "connect " <> player
-            ok <- addClient modelVar player conn
+        Just (Connect user) -> do
+            T.putStrLn $ "connect " <> user
+            ok <- addClient modelVar user conn
             if ok 
             then do
-                sendMsg (Connected $ "hello " <> player) conn
-                finally (run modelVar player conn) (stop modelVar player)
-            else sendMsg (NotConnected $ player <> " already used") conn
+                sendMsg (Connected $ "hello " <> user) conn
+                finally (run modelVar user conn) (stop modelVar user)
+            else sendMsg (NotConnected $ user <> " already used") conn
         _ -> T.putStrLn "unknown query"
 
-run :: TVar Model -> P.Player -> WS.Connection -> IO ()
-run modelVar player conn = forever $ do
+run :: TVar Model -> User -> WS.Connection -> IO ()
+run modelVar user conn = forever $ do
     msg <- recvMsg conn
     case msg of
         Just (P.PlayMove move) -> do
-            T.putStrLn $ "playmove: " <> player <> " plays " <> T.pack (show move)
+            T.putStrLn $ "playmove: " <> user <> " plays " <> T.pack (show move)
             m <- readTVarIO modelVar
-            let battle = m^.battles & find (isInBattle player)
+            let battle = m^.battles & find (isInBattle user)
             case battle of
-                Nothing -> T.putStrLn $ "invalid playmove from " <> player
-                Just (pr, py, cr, cy, g) -> do
-                    -- TODO check player
-                    if _currentPlayer g == G.PlayerR && player == pr
-                        || _currentPlayer g == G.PlayerY && player == py
+                Nothing -> T.putStrLn $ "invalid playmove from " <> user
+                Just (userR, userY, connR, connY, g) -> do
+                    -- TODO check user
+                    if _currentPlayer g == G.PlayerR && user == userR
+                        || _currentPlayer g == G.PlayerY && user == userY
                     then do
                         g1 <- stToIO $ G.playJ move g
                         -- TODO refactor ?
                         atomically $ modifyTVar' modelVar $ \mm -> 
-                            mm & battles %~ map (\bt@(pri,pyi,_,_,_) -> 
-                                if pr==pri && py==pyi
-                                then (pr,py,cr,cy,g1)
+                            mm & battles %~ map (\bt@(userRi,userYi,_,_,_) -> 
+                                if userR==userRi && userY==userYi
+                                then (userR,userY,connR,connY,g1)
                                 else bt)
-                        let c = if G._currentPlayer g1 == G.PlayerR then cr else cy
-                        (board, color) <- stToIO $ P.fromGame g1
+                        let conn1 = if G._currentPlayer g1 == G.PlayerR
+                                    then connR else connY
+                        (board, player, status) <- stToIO $ P.fromGame g1
                         if G.isRunning g1
-                        then sendMsg (GenMove board color) c
+                        then sendMsg (GenMove board player status) conn1
                         else do
-                            let status = G._status g1
                             print status
-                            sendMsg (EndGame board status) cr
-                            sendMsg (EndGame board status) cy
-                    else T.putStrLn $ "not your turn " <> player
+                            sendMsg (EndGame board PlayerR status) connR
+                            sendMsg (EndGame board PlayerY status) connY
+                    else T.putStrLn $ "not your turn " <> user
                         -- TODO play game
         _ -> putStrLn "unknown message; skipping"
 
-stop :: TVar Model -> P.Player -> IO ()
-stop modelVar player = do
-    rmClient modelVar player
+stop :: TVar Model -> User -> IO ()
+stop modelVar user = do
+    rmClient modelVar user
     putStrLn "stop"
 
 -------------------------------------------------------------------------------
@@ -97,26 +97,26 @@ loopRunner :: TVar Model -> IO ()
 loopRunner modelVar = do
     threadDelay sleepTime
 
-    mPrPyCrCy <- atomically $ do
+    res <- atomically $ do
         m <- readTVar modelVar
         case m^.waiting of
-            (pr:py:ws) -> do
+            (userR:userY:ws) -> do
                 writeTVar modelVar (m & waiting .~ ws)
                 let cs = m ^. clients
-                return $ Just (pr, py, cs M.! pr, cs M.! py)
+                return $ Just (userR, userY, cs M.! userR, cs M.! userY)
             _ -> return Nothing
 
-    case mPrPyCrCy of
+    case res of
         Nothing -> loopRunner modelVar
-        Just (pr, py, cr, cy) -> do
-            T.putStrLn $ "newgame: " <> pr <> " vs " <> py
-            sendMsg (NewGame pr py) cr
-            sendMsg (NewGame pr py) cy
+        Just (userR, userY, playerR, playerY) -> do
+            T.putStrLn $ "newgame: " <> userR <> " vs " <> userY
+            sendMsg (NewGame userR userY) playerR
+            sendMsg (NewGame userR userY) playerY
             game <- stToIO $ G.mkGame G.PlayerR
             atomically $ modifyTVar' modelVar
-                (\m -> m & battles %~ ((pr, py, cr, cy, game):))
-            (b, c) <- stToIO $ fromGame game
-            sendMsg (GenMove b c) cr
+                (\m -> m & battles %~ ((userR, userY, playerR, playerY, game):))
+            (b, p, s) <- stToIO $ fromGame game
+            sendMsg (GenMove b p s) playerR
             loopRunner modelVar
 
 -------------------------------------------------------------------------------

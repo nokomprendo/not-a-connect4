@@ -8,9 +8,9 @@ Puissance 4 en réseau pour comparer des IA.
 
 - websockets
 - messages textes utf-8 finissant par " \n"
-- player/pool sans whitespaces (' ', \t, \n, \r)
+- username sans espaces (' ', \t, \n, \r)
 - BOARD: (. | R | Y)x42                     ; ligne0, ligne1...
-- COLOR: R | Y
+- PLAYER: R | Y
 - MOVE: 0-6                                 ; numéro colonne
 - STATUS : WinR | WinY | Tie | PlayR | PlayY
 - move invalide -> annulation partie courante et fin
@@ -19,20 +19,20 @@ Puissance 4 en réseau pour comparer des IA.
 - s2c/c2s: server-to-client/client-to-server
 
 ```
-c2s: connect <player-name> \n
+c2s: connect <username> \n
 s2c: connected [message] \n                 ; message d'accueil
 s2c: not-connected [message] \n             ; message d'erreur
 
-s2c: newgame <playerR> <playerY> \n
+s2c: newgame <user> <user> \n
 s2c: genmove BOARD COLOR \n                 ; board, 1er joueur, joueur courant
 c2s: playmove MOVE \n
-s2c: endgame BOARD STATUS \n
+s2c: endgame BOARD COLOR STATUS \n
 ```
 
 ## Monitoring serveur
 
 ```
-- pour chaque battle terminée: <playerR> <playerY> <nbgames> TIME TIME
+- pour chaque battle terminée: <user> <user> <nbgames> TIME TIME
 - pour chaque joueur: nbparties, ratio win/lose/draw, durée moyenne
 ```
 
