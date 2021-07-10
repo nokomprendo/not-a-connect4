@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module NaC4.Server.Model where
 
@@ -52,7 +53,8 @@ data Model = Model
 makeLenses ''Model
 
 newModel :: Model
-newModel = Model M.empty [] M.empty [] [] M.empty
+newModel = Model M.empty [] M.empty [] [] (M.fromList [("TODO test", UserStats 1 2 3 6)])
+-- TODO newModel = Model M.empty [] M.empty [] [] M.empty
 
 addClient :: TVar Model -> User -> WS.Connection -> IO Bool
 addClient modelVar user conn =  atomically $ do
