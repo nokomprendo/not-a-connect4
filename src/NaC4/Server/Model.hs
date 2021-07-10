@@ -12,6 +12,7 @@ import NaC4.Protocol as P
 import Control.Concurrent.STM
 import Control.Monad.ST (RealWorld)
 import qualified Data.Aeson as A
+import Data.List
 import qualified Data.Map.Strict as M
 import GHC.Generics
 import Lens.Micro.Platform
@@ -70,12 +71,19 @@ addClient modelVar user conn =  atomically $ do
 delClient :: TVar Model -> User -> IO ()
 delClient modelVar user = atomically $ do
     m <- readTVar modelVar
-    -- TODO stop battle and put opponent in waiting
-    writeTVar modelVar (m & mClients %~ M.delete user
-                          & mBattles %~ filter (not . isInBattle user)
-                          & mWaiting %~ filter (/=user))
+    case partition (isInBattle user) (m^.mBattles) of
+        ([], _) -> writeTVar modelVar $ m 
+            & mClients %~ M.delete user
+            & mWaiting %~ filter (/=user)
+        (bs0, bs1) -> do
+            writeTVar modelVar $ m 
+                & mClients %~ M.delete user
+                & mWaiting %~ (++ map (opponent user) bs0) 
+                & mBattles .~ bs1
 
 isInBattle :: User -> Battle -> Bool
 isInBattle user battle = user == battle^.bUserR || user == battle^.bUserY
 
+opponent :: User -> Battle -> User
+opponent user (Battle ur uy _ _) = if user == ur then uy else ur
 

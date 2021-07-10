@@ -28,4 +28,14 @@ spec = do
             g <- stToIO $ mkGame PlayerR
             isInBattle "baz" (Battle "foo" "bar" g 42) `shouldBe` False
 
+    describe "opponent" $ do
+
+        it "1" $ do
+            g <- stToIO $ mkGame PlayerR
+            opponent "foo" (Battle "foo" "bar" g 42) `shouldBe` "bar"
+
+        it "2" $ do
+            g <- stToIO $ mkGame PlayerR
+            opponent "bar" (Battle "foo" "bar" g 42) `shouldBe` "foo"
+
 
