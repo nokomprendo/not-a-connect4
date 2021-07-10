@@ -85,7 +85,14 @@ sendMsg msg conn = WS.sendTextData conn $ fmtMsgToServer msg
 usage :: IO ()
 usage = do
     progName <- getProgName
-    putStrLn $ "usage: " <> progName <> " host port player bot [botArgs]\n"
-    putStrLn $ "example: " <> progName <> " 127.0.0.1 3000 myname mcts 512"
-    putStrLn $ "example: " <> progName <> " not-a-connect4.herokuapp.com 80 myname mc 64"
+    putStrLn $ "usage: " <> progName <> " host port player bot [botArgs]"
+    putStrLn ""
+    putStrLn "example: "
+    putStrLn $ "  " <> progName <> " 127.0.0.1 3000 myname mcts 512"
+    putStrLn $ "  " <> progName <> " not-a-connect4.herokuapp.com 80 myname mc 64"
+    putStrLn ""
+    putStrLn "bots: "
+    putStrLn "  random"
+    putStrLn "  mc <nsim>"
+    putStrLn "  mcts <nsims>"
 
