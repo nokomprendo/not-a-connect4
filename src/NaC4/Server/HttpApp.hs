@@ -75,8 +75,8 @@ instance ToHtml HomeData where
                 tr_ $ do
                     th_ "red"
                     th_ "yellow"
-                    th_ "board"
                     th_ "status"
+                    th_ "board"
                 forM_ res $ \r -> tr_ $ do
                     td_ $ toHtml $ r^.rUserR
                     td_ $ toHtml $ r^.rUserY

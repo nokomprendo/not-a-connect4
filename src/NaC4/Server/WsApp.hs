@@ -48,7 +48,7 @@ run modelVar user conn = forever $ do
     msg <- recvMsg conn
     case msg of
         Just (P.PlayMove move) -> do
-            T.putStrLn $ "playmove: " <> user <> " plays " <> T.pack (show move)
+            -- T.putStrLn $ "playmove: " <> user <> " plays " <> T.pack (show move)
             m1 <- readTVarIO modelVar
             let battle = m1^.mBattles & find (isInBattle user)
             case battle of
@@ -75,7 +75,8 @@ run modelVar user conn = forever $ do
                         else do
                             atomically $ modifyTVar' modelVar $ \m -> 
                                 m & mResults %~ (Result userR userY board status :)
-                            print status
+                            T.putStrLn $ userR <> " vs " <> userY 
+                                <> " -> " <> T.pack (show status)
                             sendMsg (EndGame board PlayerR status) connR
                             sendMsg (EndGame board PlayerY status) connY
                             -- TODO repeat battle
@@ -95,9 +96,6 @@ stop modelVar user = do
 
 sleepTime :: Int
 sleepTime = 1_000_000 
-
--- nbGames :: Int
--- nbGames = 10 
 
 loopRunner :: TVar Model -> IO ()
 loopRunner modelVar = do
@@ -137,8 +135,6 @@ sendMsg msg conn = WS.sendTextData conn (fmtMsgToClient msg)
 
 
 
-
-
 {-
 
 import Data.Aeson (decode, encode)
@@ -154,95 +150,6 @@ wsGameTimeStep = round wsGameTimeStepD
 myGetTime :: IO Double
 myGetTime = (* 10e-12) . fromIntegral . diffTimeToPicoseconds . utctDayTime
             <$> getCurrentTime
-
-serverApp :: MVar WsModel -> WS.PendingConnection -> IO ()
-serverApp var pc = do
-    conn <- WS.acceptRequest pc
-    msg <- decode . WS.fromLazyByteString <$> WS.receiveData conn
-    case msg of
-        Just WsMonitorAsk -> do
-            T.putStrLn "new monitor"
-            iConn <- addMonitorConn var conn
-            finally (handleMonitor conn) (disconnectMonitor var iConn)
-        Just WsControlAsk -> do
-            T.putStrLn "new control"
-            (iConn, agent) <- addControlConn var conn
-            WS.sendTextData conn (encode $ WsColor $ agentCol agent) 
-            finally (handleControl var iConn conn) (disconnectControl var iConn)
-        _ -> T.putStrLn "warning: unknown WS connection"
-
-loopWsModel :: MVar WsModel -> IO ()
-loopWsModel mVar = forever $ do
-    threadDelay wsGameTimeStep
-    t1 <- myGetTime
-    wsmodel <- modifyMVar mVar $ \ wsmodel0 -> do
-        let dt = t1 - wsLastTime wsmodel0
-            game1 = stepGame dt (wsGame wsmodel0)
-            wsmodel1 = wsmodel0 { wsGame = game1, wsLastTime = t1 }
-        return (wsmodel1, wsmodel1)
-    let conns = wsConns $ wsMonitorMgr wsmodel
-        game = wsGame wsmodel
-    forM_ conns $ \ wsconn ->
-        WS.sendTextData (wsConn wsconn) (encode $ WsGame game) 
-
--------------------------------------------------------------------------------
--- monitor
--------------------------------------------------------------------------------
-
-addMonitorConn :: MVar WsModel -> WS.Connection -> IO Int
-addMonitorConn var conn = modifyMVar var f
-    where f wsmodel0 = do
-            let (i, mgr) = addConn conn (wsMonitorMgr wsmodel0)
-                wsmodel1 = wsmodel0 { wsMonitorMgr = mgr }
-            return (wsmodel1, i)
-
-handleMonitor :: WS.Connection -> IO ()
-handleMonitor conn = forever $ do
-    _ <- WS.receiveDataMessage conn
-    return ()
-
-disconnectMonitor :: MVar WsModel -> Int -> IO ()
-disconnectMonitor var iConn =
-    modifyMVar_ var $ \ wsmodel0 -> do
-        let mgr0 = wsMonitorMgr wsmodel0
-            mgr1 = rmConn iConn mgr0
-            game1 = rmAgent iConn (wsGame wsmodel0)
-        return wsmodel0 { wsGame = game1, wsMonitorMgr = mgr1 }
-
--------------------------------------------------------------------------------
--- control
--------------------------------------------------------------------------------
-
-addControlConn :: MVar WsModel -> WS.Connection -> IO (Int, Agent)
-addControlConn var conn = modifyMVar var f
-    where f wsmodel0 = do
-            agent <- genAgent
-            let (i, mgr) = addConn conn (wsControlMgr wsmodel0)
-                game1 = addAgent i agent (wsGame wsmodel0)
-                wsmodel1 = wsmodel0 { wsGame = game1, wsControlMgr = mgr }
-            return (wsmodel1, (i, agent))
-
-handleControl :: MVar WsModel -> Int -> WS.Connection -> IO ()
-handleControl var iConn conn = forever $ do
-    msg <- decode . WS.fromLazyByteString <$> WS.receiveData conn
-    case msg of
-        Just (WsActionStart dir) -> modifyMVar_ var $ \ wsmodel0 -> do
-            let game0 = wsGame wsmodel0 
-                game1 = startAgent iConn dir game0
-            return wsmodel0 { wsGame = game1 }
-        Just WsActionStop -> modifyMVar_ var $ \ wsmodel0 -> do
-            let game0 = wsGame wsmodel0 
-                game1 = stopAgent iConn game0
-            return wsmodel0 { wsGame = game1 }
-        _ -> return ()
-
-disconnectControl :: MVar WsModel -> Int -> IO ()
-disconnectControl var iConn =
-    modifyMVar_ var $ \ wsmodel0 -> do
-        let mgr0 = wsControlMgr wsmodel0
-            mgr1 = rmConn iConn mgr0
-            game1 = rmAgent iConn (wsGame wsmodel0)
-        return wsmodel0 { wsGame = game1, wsControlMgr = mgr1 }
 
 -}
 

@@ -40,7 +40,6 @@ data UserStats = UserStats
     } deriving (Generic)
 makeLenses ''UserStats
 instance A.ToJSON UserStats
--- instance A.ToJSON (M.Map User UserStats)
 
 data Model = Model
     { _mClients     :: M.Map User WS.Connection
