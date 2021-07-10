@@ -11,8 +11,8 @@ import Control.Concurrent (threadDelay)
 import Control.Concurrent.STM
 import Control.Exception (finally)
 import Control.Monad (forever)
-import Control.Monad.ST
-import Data.List
+import Control.Monad.ST (stToIO)
+import Data.List (find)
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Data.Text.IO as T

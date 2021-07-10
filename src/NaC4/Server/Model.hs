@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TemplateHaskell #-}
+
 {-# LANGUAGE OverloadedStrings #-}
 
 module NaC4.Server.Model where
@@ -9,7 +10,7 @@ import NaC4.Game as G
 import NaC4.Protocol as P
 
 import Control.Concurrent.STM
-import Control.Monad.ST
+import Control.Monad.ST (RealWorld)
 import qualified Data.Aeson as A
 import qualified Data.Map.Strict as M
 import GHC.Generics

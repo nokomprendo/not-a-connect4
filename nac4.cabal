@@ -64,4 +64,5 @@ test-suite spec
     other-modules:      NaC4.GameSpec
                         NaC4.ProtocolSpec
                         NaC4.Client.BotSpec
+                        NaC4.Server.ModelSpec
 
