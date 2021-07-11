@@ -58,7 +58,9 @@ handleGamesVg modelVar = do
 handleTimeVg :: TVar Model -> Handler [TimeVg]
 handleTimeVg modelVar = do
     stats <- handleGetInModel (M.toList . _mUserStats) modelVar
-    let fmt (u, us) = TimeVg u (us^.usTime) (us^.usGames)
+    let fmt (u, us) =   let t = us^.usTime
+                            g = us^.usGames
+                        in TimeVg u t g (t / fromIntegral g)
     return $ map fmt stats
 
 handleHome :: TVar Model -> Handler HomeData

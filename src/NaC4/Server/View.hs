@@ -50,6 +50,7 @@ instance ToHtml HomeData where
                 li_ $ a_ [href_ "api/results"] "api/results"
                 li_ $ a_ [href_ "api/games-vg"] "api/games-vg"
                 li_ $ a_ [href_ "api/users-vg"] "api/users-vg"
+                li_ $ a_ [href_ "api/time-vg"] "api/time-vg"
 
             h2_ "Summary"
 
@@ -58,6 +59,9 @@ instance ToHtml HomeData where
 
             p_ $ div_ [id_ "plotUsers"] $ script_ $ 
                 "vegaEmbed('#plotUsers', " <> descUsers <> ");"
+
+            p_ $ div_ [id_ "plotTime"] $ script_ $ 
+                "vegaEmbed('#plotTime', " <> descTime <> ");"
 
             h2_ "Users"
             table_ $ do
@@ -146,26 +150,23 @@ data TimeVg = TimeVg
     { tUser :: T.Text
     , tTime :: Double
     , tGames :: Int
+    , tAvg :: Double
     } deriving (Generic)
 
 instance A.ToJSON TimeVg
 
--- TODO
 descTime :: T.Text
 descTime = 
     [r|
         {
           "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-          "data": {"url": "api/games-vg"},
-          "params": [{"name": "highlight", "select": "point"}],
-          "mark": {"type": "rect"},
+          "width": 600,
+          "data": {"url": "api/time-vg"},
+          "mark": "bar",
           "encoding": {
-            "y": { "field": "userR", "type": "nominal" },
-            "x": { "field": "userY", "type": "nominal" },
-            "fill": { "field": "nbGames", "type": "quantitative" },
-            "order": {"condition": {"param": "highlight", "value": 1}, "value": 0}
-          },
-          "config": { "view": {"step": 40} }
+            "y": {"type": "ordinal", "field": "tUser"},
+            "x": {"type": "quantitative", "field": "tAvg"}
+          }
         }
     |]
 

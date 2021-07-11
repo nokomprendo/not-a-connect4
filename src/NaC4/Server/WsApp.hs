@@ -51,22 +51,26 @@ run modelVar user conn = forever $ do
     msg <- recvMsg conn
     case msg of
         Just (P.PlayMove move) -> do
+            time1 <- myGetTime
             m1 <- readTVarIO modelVar
             let battle = m1^.mBattles & find (isInBattle user)
             case battle of
                 Nothing -> T.putStrLn $ "invalid playmove from " <> user
-                Just bt0@(Battle userR userY g _ _ _) -> do
-                    if (_currentPlayer g == G.PlayerR && user /= userR)
-                        || (_currentPlayer g == G.PlayerY && user /= userY)
+                Just bt0@(Battle userR userY g0 _ _ _) -> do
+                    if (_currentPlayer g0 == G.PlayerR && user /= userR)
+                        || (_currentPlayer g0 == G.PlayerY && user /= userY)
                     then T.putStrLn $ "not your turn " <> user
                     else do
-                        g1 <- stToIO $ G.playJ move g
-                        -- TODO refactor ?
+                        g1 <- stToIO $ G.playJ move g0
+                        time2 <- myGetTime
                         atomically $ modifyTVar' modelVar $ \m -> 
                             m & mBattles %~ map (\bt -> 
                                 if userR==bt^.bUserR && userY==bt^.bUserY
-                                then Battle userR userY g1 0 0 0
-                                -- TODO time
+                                then 
+                                    let dt = time1 - bt^.bTimeI
+                                    in if _currentPlayer g0 == G.PlayerR
+                                        then bt & bGame.~g1 & bTimeI.~time2 & bTimeR+~dt
+                                        else bt & bGame.~g1 & bTimeI.~time2 & bTimeY+~dt
                                 else bt)
                         let connR = (m1^.mClients) M.! userR
                             connY = (m1^.mClients) M.! userY
@@ -115,9 +119,9 @@ loopRunner modelVar = do
             sendMsg (NewGame userR userY) playerR
             sendMsg (NewGame userR userY) playerY
             game <- stToIO $ G.mkGame G.PlayerR
+            time <- myGetTime
             atomically $ modifyTVar' modelVar
-                (\m -> m & mBattles %~ (Battle userR userY game 0 0 0:))
-                -- TODO time
+                (\m -> m & mBattles %~ (Battle userR userY game 0 0 time :))
             (b, p, s) <- stToIO $ fromGame game
             sendMsg (GenMove b p s) playerR
             loopRunner modelVar

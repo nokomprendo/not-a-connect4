@@ -1,0 +1,10 @@
+{
+    "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+    "data": {"url": "data.json"},
+    "mark": "bar",
+    "encoding": {
+        "y": {"type": "ordinal", "field": "tUser"},
+        "x": {"type": "quantitative", "field": "tAvg"}
+    }
+}
+
