@@ -75,10 +75,7 @@ nix-shell --run "cabal run nac4-client not-a-connect4.herokuapp.com 80 myname mc
 
 - selection des users
 - refactoring wsapp
-- maj de la page web via SSE ?
-- gestion de salons de jeu ?
-- stockage des resultats en bdd ?
-- gestion du temps de jeu ?
+- chronométrer les genmoves
 
 ## Changelog
 
@@ -100,4 +97,13 @@ nix-shell --run "cabal run nac4-client not-a-connect4.herokuapp.com 80 myname mc
 - api json
 - results + http
 - repetitions des parties + stats
+- ajout d'un graphique sur l'appli http
+
+## TODO (ou pas)
+
+- maj de la page web via SSE
+- gestion de salons de jeu
+- stockage des resultats en bdd
+- gestion du temps de jeu
+- authentification des users
 

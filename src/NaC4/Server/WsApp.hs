@@ -34,7 +34,7 @@ serverApp modelVar pc = do
     msgToServer <- recvMsg conn
     case msgToServer of
         Just (Connect user) -> do
-            T.putStrLn $ "connect " <> user
+            T.putStrLn $ "hello " <> user
             ok <- addClient modelVar user conn
             if ok 
             then do
@@ -109,7 +109,6 @@ loopRunner modelVar = do
     case res of
         Nothing -> loopRunner modelVar
         Just (userR, userY, playerR, playerY) -> do
-            -- T.putStrLn $ "newgame: " <> userR <> " vs " <> userY
             sendMsg (NewGame userR userY) playerR
             sendMsg (NewGame userR userY) playerY
             game <- stToIO $ G.mkGame G.PlayerR
