@@ -17,6 +17,7 @@ common deps
                         microlens-platform,
                         mwc-random,
                         network,
+                        raw-strings-qq,
                         servant,
                         servant-lucid,
                         servant-server,
