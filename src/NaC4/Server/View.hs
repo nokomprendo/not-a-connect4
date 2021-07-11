@@ -48,10 +48,13 @@ instance ToHtml HomeData where
                 li_ $ a_ [href_ "https://github.com/nokomprendo/not-a-connect4"] "source code"
                 li_ $ a_ [href_ "api/users"] "api/users"
                 li_ $ a_ [href_ "api/results"] "api/results"
-                li_ $ a_ [href_ "api/nb-games"] "api/nb-games"
+                li_ $ a_ [href_ "api/games-vg"] "api/games-vg"
                 li_ $ a_ [href_ "api/users-vg"] "api/users-vg"
 
             h2_ "Users"
+
+            div_ [id_ "plotGames"] $ script_ $ 
+                "vegaEmbed('#plotGames', " <> descGames <> ");"
 
             div_ [id_ "plotUsers"] $ script_ $ 
                 "vegaEmbed('#plotUsers', " <> descUsers <> ");"
@@ -108,4 +111,29 @@ descUsers =
 -- games
 -------------------------------------------------------------------------------
 
+data GamesVg = GamesVg
+    { userR :: T.Text
+    , userY :: T.Text
+    , nbGames :: Int
+    } deriving (Generic)
+
+instance A.ToJSON GamesVg
+
+descGames :: T.Text
+descGames = 
+    [r|
+        {
+          "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+          "data": {"url": "api/games-vg"},
+          "params": [{"name": "highlight", "select": "point"}],
+          "mark": {"type": "rect"},
+          "encoding": {
+            "y": { "field": "userR", "type": "nominal" },
+            "x": { "field": "userY", "type": "nominal" },
+            "fill": { "field": "nbGames", "type": "quantitative" },
+            "order": {"condition": {"param": "highlight", "value": 1}, "value": 0}
+          },
+          "config": { "view": {"step": 40} }
+        }
+    |]
 

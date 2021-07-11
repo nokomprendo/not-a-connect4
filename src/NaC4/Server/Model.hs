@@ -90,7 +90,7 @@ finishBattle modelVar battle board status = atomically $ do
         result = Result userR userY board status
     m <- readTVar modelVar
     writeTVar modelVar $ m 
-        & mWaiting %~ (++[userR, userY]) 
+        & mWaiting %~ (++[userY, userR]) 
         & mBattles %~ filter (/=battle)
         & mResults %~ (result:)
         & mNbGames %~ M.insertWith (+) (userR, userY) 1

@@ -20,14 +20,14 @@ import Servant.HTML.Lucid
 type ApiResultsRoute = "api" :> "results" :> Get '[JSON] [Result]
 type ApiUsersRoute = "api" :> "users" :> Get '[JSON] (M.Map User UserStats)
 type ApiUsersVgRoute = "api" :> "users-vg" :> Get '[JSON] [UsersVg]
-type ApiNbGamesRoute = "api" :> "nb-games" :> Get '[JSON] (M.Map (User, User) Int)
+type ApiGamesVgRoute = "api" :> "games-vg" :> Get '[JSON] [GamesVg]
 type HomeRoute = Get '[HTML] HomeData
 
 type ServerApi
     =    ApiResultsRoute
     :<|> ApiUsersRoute
     :<|> ApiUsersVgRoute
-    :<|> ApiNbGamesRoute
+    :<|> ApiGamesVgRoute
     :<|> HomeRoute
 
 handleServerApi :: TVar Model -> Server ServerApi
@@ -35,20 +35,21 @@ handleServerApi modelVar
     =    handleGetInModel _mResults modelVar
     :<|> handleGetInModel _mUserStats modelVar
     :<|> handleUsersVg modelVar
-    :<|> handleNbGamesVg modelVar
+    :<|> handleGamesVg modelVar
     :<|> handleHome modelVar
 
 handleGetInModel :: (Model -> a) -> TVar Model -> Handler a
 handleGetInModel f modelVar = liftIO (f <$> readTVarIO modelVar)
 
--- TODO
-handleNbGamesVg :: TVar Model -> Handler (M.Map (User, User) Int)
-handleNbGamesVg modelVar = liftIO (_mNbGames <$> readTVarIO modelVar)
-
 handleUsersVg :: TVar Model -> Handler [UsersVg]
 handleUsersVg modelVar = do
     stats <- liftIO (M.toList . _mUserStats <$> readTVarIO modelVar)
     return $ map (\(u, UserStats w l t _) -> UsersVg u w l t) stats
+
+handleGamesVg :: TVar Model -> Handler [GamesVg]
+handleGamesVg modelVar = do
+    ngames <- liftIO (M.toList . _mNbGames <$> readTVarIO modelVar)
+    return $ map (\((ur, uy), n) -> GamesVg ur uy n) ngames
 
 handleHome :: TVar Model -> Handler HomeData
 handleHome modelVar = do

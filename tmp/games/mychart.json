@@ -2,47 +2,13 @@
   "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
   "data": {"url": "data.json"},
   "params": [{"name": "highlight", "select": "point"}],
-  "mark": {"type": "rect", "strokeWidth": 2},
+  "mark": {"type": "rect"},
   "encoding": {
-    "y": {
-      "field": "actual",
-      "type": "nominal"
-    },
-    "x": {
-      "field": "predicted",
-      "type": "nominal"
-    },
-    "fill": {
-      "field": "count",
-      "type": "quantitative"
-    },
-    "stroke": {
-      "condition": {
-        "param": "highlight",
-        "empty": false,
-        "value": "black"
-      },
-      "value": null
-    },
-    "opacity": {
-      "condition": {"param": "highlight", "value": 1},
-      "value": 0.5
-    },
+    "y": { "field": "userR", "type": "nominal" },
+    "x": { "field": "userY", "type": "nominal" },
+    "fill": { "field": "nbGames", "type": "quantitative" },
     "order": {"condition": {"param": "highlight", "value": 1}, "value": 0}
   },
-  "config": {
-    "scale": {
-      "bandPaddingInner": 0,
-      "bandPaddingOuter": 0
-    },
-    "view": {"step": 40},
-    "range": {
-      "ramp": {
-        "scheme": "yellowgreenblue"
-      }
-    },
-    "axis": {
-      "domain": false
-    }
-  }
+  "config": { "view": {"step": 40} }
 }
+
