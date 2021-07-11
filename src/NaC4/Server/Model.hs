@@ -97,14 +97,11 @@ delClient modelVar user = atomically $ do
 
 finishBattle :: TVar Model -> Battle -> P.Board -> G.Status -> IO ()
 finishBattle modelVar battle board status = atomically $ do
-    let userR = battle^.bUserR
-        userY = battle^.bUserY
-        timeR = battle^.bTimeR
-        timeY = battle^.bTimeY
+    let (Battle userR userY _ timeR timeY _) = battle
         result = Result userR userY board status
     m <- readTVar modelVar
     writeTVar modelVar $ m 
-        & mWaiting %~ (++[userY, userR]) 
+        & mWaiting %~ (++[userR, userY]) 
         & mBattles %~ filter (/=battle)
         & mResults %~ (result:)
         & mNbGames %~ M.insertWith (+) (userR, userY) 1
@@ -112,12 +109,12 @@ finishBattle modelVar battle board status = atomically $ do
         & mUserStats %~ M.adjust (updateStats PlayerY status timeY) userY
 
 updateStats :: G.Player -> G.Status -> Double -> UserStats -> UserStats
-updateStats PlayerR WinR t us0 = us0 & usWins +~ 1 & usGames +~ 1 & usTime +~ t
+updateStats PlayerR WinR t us0 = us0 & usWins  +~ 1 & usGames +~ 1 & usTime +~ t
 updateStats PlayerR WinY t us0 = us0 & usLoses +~ 1 & usGames +~ 1 & usTime +~ t
-updateStats PlayerR Tie t us0 = us0 & usTies +~ 1 & usGames +~ 1 & usTime +~ t
+updateStats PlayerR Tie  t us0 = us0 & usTies  +~ 1 & usGames +~ 1 & usTime +~ t
 updateStats PlayerY WinR t us0 = us0 & usLoses +~ 1 & usGames +~ 1 & usTime +~ t
-updateStats PlayerY WinY t us0 = us0 & usWins +~ 1 & usGames +~ 1 & usTime +~ t
-updateStats PlayerY Tie t us0 = us0 & usTies +~ 1 & usGames +~ 1 & usTime +~ t
+updateStats PlayerY WinY t us0 = us0 & usWins  +~ 1 & usGames +~ 1 & usTime +~ t
+updateStats PlayerY Tie  t us0 = us0 & usTies  +~ 1 & usGames +~ 1 & usTime +~ t
 updateStats _ _ _ us0 = us0
 
 isInBattle :: User -> Battle -> Bool

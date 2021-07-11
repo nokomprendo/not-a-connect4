@@ -31,6 +31,7 @@ newtype HomeData = HomeData ([Result], M.Map User UserStats)
 
 instance ToHtml HomeData where
     toHtmlRaw = toHtml
+
     toHtml (HomeData (results, users)) = doctypehtml_ $ do
         head_ $ do
             meta_ [charset_ "utf-8"]
@@ -42,6 +43,7 @@ instance ToHtml HomeData where
             script_ [src_ "https://cdn.jsdelivr.net/npm/vega@5"] ("" :: T.Text)
             script_ [src_ "https://cdn.jsdelivr.net/npm/vega-lite@5"] ("" :: T.Text)
             script_ [src_ "https://cdn.jsdelivr.net/npm/vega-embed@6"] ("" :: T.Text)
+
         body_ $ do
             h1_ "Not a Connect4"
             ul_ $ do
@@ -53,13 +55,10 @@ instance ToHtml HomeData where
                 li_ $ a_ [href_ "api/time-vg"] "api/time-vg"
 
             h2_ "Summary"
-
             p_ $ div_ [id_ "plotGames"] $ script_ $ 
                 "vegaEmbed('#plotGames', " <> descGames <> ");"
-
             p_ $ div_ [id_ "plotUsers"] $ script_ $ 
                 "vegaEmbed('#plotUsers', " <> descUsers <> ");"
-
             p_ $ div_ [id_ "plotTime"] $ script_ $ 
                 "vegaEmbed('#plotTime', " <> descTime <> ");"
 

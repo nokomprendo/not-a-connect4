@@ -75,7 +75,6 @@ nix-shell --run "cabal run nac4-client not-a-connect4.herokuapp.com 80 myname mc
 
 - selection des users
 - refactoring wsapp
-- chronométrer les genmoves
 
 ## Changelog
 
@@ -98,6 +97,7 @@ nix-shell --run "cabal run nac4-client not-a-connect4.herokuapp.com 80 myname mc
 - results + http
 - repetitions des parties + stats
 - ajout des graphiques sur l'appli http
+- chronométrage des genmoves
 
 ## TODO (ou pas)
 
