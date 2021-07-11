@@ -21,6 +21,7 @@ type ApiResultsRoute = "api" :> "results" :> Get '[JSON] [Result]
 type ApiUsersRoute = "api" :> "users" :> Get '[JSON] (M.Map User UserStats)
 type ApiUsersVgRoute = "api" :> "users-vg" :> Get '[JSON] [UsersVg]
 type ApiGamesVgRoute = "api" :> "games-vg" :> Get '[JSON] [GamesVg]
+type ApiTimeVgRoute = "api" :> "time-vg" :> Get '[JSON] [TimeVg]
 type HomeRoute = Get '[HTML] HomeData
 
 type ServerApi
@@ -28,6 +29,7 @@ type ServerApi
     :<|> ApiUsersRoute
     :<|> ApiUsersVgRoute
     :<|> ApiGamesVgRoute
+    :<|> ApiTimeVgRoute
     :<|> HomeRoute
 
 handleServerApi :: TVar Model -> Server ServerApi
@@ -36,6 +38,7 @@ handleServerApi modelVar
     :<|> handleGetInModel _mUserStats modelVar
     :<|> handleUsersVg modelVar
     :<|> handleGamesVg modelVar
+    :<|> handleTimeVg modelVar
     :<|> handleHome modelVar
 
 handleGetInModel :: (Model -> a) -> TVar Model -> Handler a
@@ -43,13 +46,20 @@ handleGetInModel f modelVar = liftIO (f <$> readTVarIO modelVar)
 
 handleUsersVg :: TVar Model -> Handler [UsersVg]
 handleUsersVg modelVar = do
-    stats <- liftIO (M.toList . _mUserStats <$> readTVarIO modelVar)
-    return $ map (\(u, UserStats w l t _) -> UsersVg u w l t) stats
+    stats <- handleGetInModel (M.toList . _mUserStats) modelVar
+    let fmt (u, us) = UsersVg u (us^.usWins) (us^.usLoses) (us^.usTies)
+    return $ map fmt stats
 
 handleGamesVg :: TVar Model -> Handler [GamesVg]
 handleGamesVg modelVar = do
-    ngames <- liftIO (M.toList . _mNbGames <$> readTVarIO modelVar)
+    ngames <- handleGetInModel (M.toList . _mNbGames) modelVar
     return $ map (\((ur, uy), n) -> GamesVg ur uy n) ngames
+
+handleTimeVg :: TVar Model -> Handler [TimeVg]
+handleTimeVg modelVar = do
+    stats <- handleGetInModel (M.toList . _mUserStats) modelVar
+    let fmt (u, us) = TimeVg u (us^.usTime) (us^.usGames)
+    return $ map fmt stats
 
 handleHome :: TVar Model -> Handler HomeData
 handleHome modelVar = do

@@ -97,7 +97,7 @@ nix-shell --run "cabal run nac4-client not-a-connect4.herokuapp.com 80 myname mc
 - api json
 - results + http
 - repetitions des parties + stats
-- ajout d'un graphique sur l'appli http
+- ajout des graphiques sur l'appli http
 
 ## TODO (ou pas)
 

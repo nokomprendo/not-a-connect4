@@ -16,6 +16,8 @@ import Data.List (find)
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
+import Data.Time.Clock (diffTimeToPicoseconds, utctDayTime)
+import Data.Time.Clock.POSIX (getCurrentTime)
 import Lens.Micro.Platform
 import Network.Wai (Application)
 import Network.Wai.Handler.WebSockets (websocketsOr)
@@ -53,7 +55,7 @@ run modelVar user conn = forever $ do
             let battle = m1^.mBattles & find (isInBattle user)
             case battle of
                 Nothing -> T.putStrLn $ "invalid playmove from " <> user
-                Just bt0@(Battle userR userY g n) -> do
+                Just bt0@(Battle userR userY g _ _ _) -> do
                     if (_currentPlayer g == G.PlayerR && user /= userR)
                         || (_currentPlayer g == G.PlayerY && user /= userY)
                     then T.putStrLn $ "not your turn " <> user
@@ -63,7 +65,8 @@ run modelVar user conn = forever $ do
                         atomically $ modifyTVar' modelVar $ \m -> 
                             m & mBattles %~ map (\bt -> 
                                 if userR==bt^.bUserR && userY==bt^.bUserY
-                                then Battle userR userY g1 n
+                                then Battle userR userY g1 0 0 0
+                                -- TODO time
                                 else bt)
                         let connR = (m1^.mClients) M.! userR
                             connY = (m1^.mClients) M.! userY
@@ -113,13 +116,14 @@ loopRunner modelVar = do
             sendMsg (NewGame userR userY) playerY
             game <- stToIO $ G.mkGame G.PlayerR
             atomically $ modifyTVar' modelVar
-                (\m -> m & mBattles %~ (Battle userR userY game 0 :))
+                (\m -> m & mBattles %~ (Battle userR userY game 0 0 0:))
+                -- TODO time
             (b, p, s) <- stToIO $ fromGame game
             sendMsg (GenMove b p s) playerR
             loopRunner modelVar
 
 -------------------------------------------------------------------------------
--- ws
+-- helpers
 -------------------------------------------------------------------------------
 
 recvMsg :: WS.Connection -> IO (Maybe MsgToServer)
@@ -128,24 +132,7 @@ recvMsg conn = parseMsgToServer . WS.fromLazyByteString <$> WS.receiveData conn
 sendMsg :: MsgToClient -> WS.Connection -> IO ()
 sendMsg msg conn = WS.sendTextData conn (fmtMsgToClient msg)
 
-
-
-{-
-
-import Data.Aeson (decode, encode)
-import Data.Time.Clock (diffTimeToPicoseconds, utctDayTime)
-import Data.Time.Clock.POSIX (getCurrentTime)
-
-wsGameTimeStepD :: Double
-wsGameTimeStepD = 0.1 * 10**6
-
-wsGameTimeStep :: Int
-wsGameTimeStep = round wsGameTimeStepD
-
 myGetTime :: IO Double
-myGetTime = (* 10e-12) . fromIntegral . diffTimeToPicoseconds . utctDayTime
-            <$> getCurrentTime
-
--}
-
+myGetTime = 
+    (* 10e-12) . fromIntegral . diffTimeToPicoseconds . utctDayTime <$> getCurrentTime
 

@@ -51,14 +51,15 @@ instance ToHtml HomeData where
                 li_ $ a_ [href_ "api/games-vg"] "api/games-vg"
                 li_ $ a_ [href_ "api/users-vg"] "api/users-vg"
 
-            h2_ "Users"
+            h2_ "Summary"
 
-            div_ [id_ "plotGames"] $ script_ $ 
+            p_ $ div_ [id_ "plotGames"] $ script_ $ 
                 "vegaEmbed('#plotGames', " <> descGames <> ");"
 
-            div_ [id_ "plotUsers"] $ script_ $ 
+            p_ $ div_ [id_ "plotUsers"] $ script_ $ 
                 "vegaEmbed('#plotUsers', " <> descUsers <> ");"
 
+            h2_ "Users"
             table_ $ do
                 tr_ $ mapM_ th_ [ "user", "wins", "loses", "ties", "games" ]
                 forM_ (M.toAscList users) $ \(u, us) -> tr_ $ mapM_ (td_ . toHtml) 
@@ -76,10 +77,10 @@ instance ToHtml HomeData where
 -------------------------------------------------------------------------------
 
 data UsersVg = UsersVg
-    { user :: T.Text
-    , wins :: Int
-    , loses :: Int
-    , ties :: Int
+    { uUser :: T.Text
+    , uWins :: Int
+    , uLoses :: Int
+    , uTies :: Int
     } deriving (Generic)
 
 instance A.ToJSON UsersVg
@@ -92,15 +93,15 @@ descUsers =
           "width": 600,
           "data": {"url": "api/users-vg"},
           "transform": [
-            {"fold": ["wins", "loses", "ties"], "as": ["result", "value"]},
-            {"calculate": "if(datum.result === 'wins', 0, if(datum.result === 'loses', 1, 2))", "as": "siteOrder"}
+            {"fold": ["uWins", "uLoses", "uTies"], "as": ["result", "value"]},
+            {"calculate": "if(datum.result === 'uWins', 0, if(datum.result === 'uLoses', 1, 2))", "as": "siteOrder"}
             ],
           "mark": "bar",
           "encoding": {
-            "y": {"type": "ordinal", "field": "user"},
+            "y": {"type": "ordinal", "field": "uUser"},
             "x": {"type": "quantitative", "field": "value"},
             "color": {"type": "nominal", "field": "result",
-                "scale": { "domain": [ "wins", "loses", "ties" ] }
+                "scale": { "domain": [ "uWins", "uLoses", "uTies" ] }
             },
             "order": {"field": "siteOrder"}
           }
@@ -112,15 +113,46 @@ descUsers =
 -------------------------------------------------------------------------------
 
 data GamesVg = GamesVg
-    { userR :: T.Text
-    , userY :: T.Text
-    , nbGames :: Int
+    { gUserR :: T.Text
+    , gUserY :: T.Text
+    , gNbGames :: Int
     } deriving (Generic)
 
 instance A.ToJSON GamesVg
 
 descGames :: T.Text
 descGames = 
+    [r|
+        {
+          "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+          "data": {"url": "api/games-vg"},
+          "params": [{"name": "highlight", "select": "point"}],
+          "mark": {"type": "rect"},
+          "encoding": {
+            "y": { "field": "gUserR", "type": "nominal" },
+            "x": { "field": "gUserY", "type": "nominal" },
+            "fill": { "field": "gNbGames", "type": "quantitative" },
+            "order": {"condition": {"param": "highlight", "value": 1}, "value": 0}
+          },
+          "config": { "view": {"step": 40} }
+        }
+    |]
+
+-------------------------------------------------------------------------------
+-- time
+-------------------------------------------------------------------------------
+
+data TimeVg = TimeVg
+    { tUser :: T.Text
+    , tTime :: Double
+    , tGames :: Int
+    } deriving (Generic)
+
+instance A.ToJSON TimeVg
+
+-- TODO
+descTime :: T.Text
+descTime = 
     [r|
         {
           "$schema": "https://vega.github.io/schema/vega-lite/v5.json",

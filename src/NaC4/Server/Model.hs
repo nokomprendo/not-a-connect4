@@ -16,31 +16,39 @@ import GHC.Generics
 import Lens.Micro.Platform
 import qualified Network.WebSockets as WS
 
+-------------------------------------------------------------------------------
+-- types
+-------------------------------------------------------------------------------
+
 data Battle = Battle
     { _bUserR       :: User
     , _bUserY       :: User
     , _bGame        :: Game RealWorld
-    , _bNbGgames    :: Int
+    , _bTimeR       :: Double
+    , _bTimeY       :: Double
+    , _bTimeI       :: Double
     }
 makeLenses ''Battle
 
 instance Eq Battle where
     b1 == b2 = b1^.bUserR == b2^.bUserR && b1^.bUserY == b2^.bUserY
 
+-- TODO add timeR/timeY ?
 data Result = Result
-    { _rUserR    :: User
-    , _rUserY    :: User
-    , _rBoard    :: P.Board
-    , _rStatus   :: G.Status
+    { _rUserR   :: User
+    , _rUserY   :: User
+    , _rBoard   :: P.Board
+    , _rStatus  :: G.Status
     } deriving (Generic)
 instance A.ToJSON Result
 makeLenses ''Result
 
 data UserStats = UserStats
-    { _usWins    :: Int
-    , _usLoses   :: Int
-    , _usTies    :: Int
-    , _usGames   :: Int
+    { _usWins   :: Int
+    , _usLoses  :: Int
+    , _usTies   :: Int
+    , _usGames  :: Int
+    , _usTime   :: Double
     } deriving (Eq, Generic, Show)
 makeLenses ''UserStats
 instance A.ToJSON UserStats
@@ -58,6 +66,10 @@ makeLenses ''Model
 newModel :: Model
 newModel = Model M.empty [] M.empty [] [] M.empty
 
+-------------------------------------------------------------------------------
+-- helpers
+-------------------------------------------------------------------------------
+
 addClient :: TVar Model -> User -> WS.Connection -> IO Bool
 addClient modelVar user conn =  atomically $ do
     m <- readTVar modelVar
@@ -67,7 +79,7 @@ addClient modelVar user conn =  atomically $ do
             writeTVar modelVar $ m 
                 & mClients %~ M.insert user conn
                 & mWaiting %~ (user:)
-                & mUserStats %~ M.insertWith (\_new old -> old) user (UserStats 0 0 0 0)
+                & mUserStats %~ M.insertWith (\_new old -> old) user (UserStats 0 0 0 0 0)
             return True
 
 delClient :: TVar Model -> User -> IO ()
@@ -110,5 +122,6 @@ isInBattle :: User -> Battle -> Bool
 isInBattle user battle = user == battle^.bUserR || user == battle^.bUserY
 
 opponent :: User -> Battle -> User
-opponent user (Battle ur uy _ _) = if user == ur then uy else ur
+opponent user battle = 
+    if user == battle^.bUserR then battle^.bUserY else battle^.bUserR
 
