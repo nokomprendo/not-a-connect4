@@ -24,7 +24,7 @@ import Text.RawString.QQ
 -------------------------------------------------------------------------------
 
 nbResults :: Int
-nbResults = 100
+nbResults = 20
 
 newtype HomeData = HomeData ([Result], M.Map User UserStats)
 
@@ -39,19 +39,13 @@ instance ToHtml HomeData where
             title_ "Not a Connect4"
             style_ "table, tr, th, td {border: 1px solid black; border-collapse: collapse}"
             style_ "th, td {padding: 0 10px 0 10px}"
+            style_ "body {background-color: beige}"
             script_ [src_ "https://cdn.jsdelivr.net/npm/vega@5"] ("" :: T.Text)
             script_ [src_ "https://cdn.jsdelivr.net/npm/vega-lite@5"] ("" :: T.Text)
             script_ [src_ "https://cdn.jsdelivr.net/npm/vega-embed@6"] ("" :: T.Text)
 
         body_ $ do
             h1_ "Not a Connect4"
-            ul_ $ do
-                li_ $ a_ [href_ "https://github.com/nokomprendo/not-a-connect4"] "source code"
-                li_ $ a_ [href_ "api/users"] "api/users"
-                li_ $ a_ [href_ "api/results"] "api/results"
-                li_ $ a_ [href_ "api/games-vg"] "api/games-vg"
-                li_ $ a_ [href_ "api/users-vg"] "api/users-vg"
-                li_ $ a_ [href_ "api/time-vg"] "api/time-vg"
 
             h2_ "Summary"
             p_ $ div_ [id_ "plotGames"] $ script_ $ 
@@ -73,6 +67,15 @@ instance ToHtml HomeData where
                 tr_ $ mapM_ th_ [ "red", "yellow", "status", "board" ]
                 forM_ (take nbResults results) $ \res -> tr_ $ mapM_ (td_ . toHtml) 
                     [ _rUserR res, _rUserY res, T.pack (show $ _rStatus res), _rBoard res ]
+
+            h2_ "Links"
+            ul_ $ do
+                li_ $ a_ [href_ "https://github.com/nokomprendo/not-a-connect4"] "source code"
+                li_ $ a_ [href_ "api/users"] "api/users"
+                li_ $ a_ [href_ "api/results"] "api/results"
+                li_ $ a_ [href_ "api/games-vg"] "api/games-vg"
+                li_ $ a_ [href_ "api/users-vg"] "api/users-vg"
+                li_ $ a_ [href_ "api/time-vg"] "api/time-vg"
 
 -------------------------------------------------------------------------------
 -- users
