@@ -13,7 +13,6 @@ import NaC4.Server.View
 import Control.Concurrent.STM
 import Control.Monad.IO.Class
 import qualified Data.Map.Strict as M
-import Lens.Micro.Platform
 import Servant
 import Servant.HTML.Lucid
 
@@ -47,7 +46,7 @@ handleGetInModel f modelVar = liftIO (f <$> readTVarIO modelVar)
 handleUsersVg :: TVar Model -> Handler [UsersVg]
 handleUsersVg modelVar = do
     stats <- handleGetInModel (M.toList . _mUserStats) modelVar
-    let fmt (u, us) = UsersVg u (us^.usWins) (us^.usLoses) (us^.usTies)
+    let fmt (u, us) = UsersVg u (_usWins us) (_usLoses us) (_usTies us)
     return $ map fmt stats
 
 handleGamesVg :: TVar Model -> Handler [GamesVg]
@@ -58,15 +57,15 @@ handleGamesVg modelVar = do
 handleTimeVg :: TVar Model -> Handler [TimeVg]
 handleTimeVg modelVar = do
     stats <- handleGetInModel (M.toList . _mUserStats) modelVar
-    let fmt (u, us) =   let t = us^.usTime
-                            g = us^.usGames
+    let fmt (u, us) =   let t = _usTime us
+                            g = _usGames us
                         in TimeVg u t g (t / fromIntegral g)
     return $ map fmt stats
 
 handleHome :: TVar Model -> Handler HomeData
 handleHome modelVar = do
     m <- liftIO $ readTVarIO modelVar
-    pure $ HomeData (m^.mResults, m^.mUserStats)
+    pure $ HomeData (_mResults m, _mUserStats m)
 
 httpApp :: TVar Model -> Application
 httpApp modelVar = serve (Proxy @ServerApi) (handleServerApi modelVar)

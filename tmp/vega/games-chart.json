@@ -1,6 +1,6 @@
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-  "data": {"url": "data.json"},
+  "data": {"url": "games-data.json"},
   "params": [{"name": "highlight", "select": "point"}],
   "mark": {"type": "rect"},
   "encoding": {

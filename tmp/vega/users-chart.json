@@ -1,6 +1,6 @@
 {
     "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-    "data": {"url": "data.json"},
+    "data": {"url": "users-data.json"},
     "transform": [
         {"fold": ["wins", "loses", "ties"], "as": ["result", "value"]},
         {"calculate": "if(datum.result === 'wins', 0, if(datum.result === 'loses', 1, 2))", "as": "siteOrder"}

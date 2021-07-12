@@ -16,7 +16,6 @@ import qualified Data.Aeson as A
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import GHC.Generics
-import Lens.Micro.Platform
 import Lucid
 import Text.RawString.QQ
 
@@ -67,13 +66,13 @@ instance ToHtml HomeData where
                 tr_ $ mapM_ th_ [ "user", "wins", "loses", "ties", "games" ]
                 forM_ (M.toAscList users) $ \(u, us) -> tr_ $ mapM_ (td_ . toHtml) 
                     (u : map (T.pack . show) 
-                        [us^.usWins, us^.usLoses, us^.usTies, us^.usGames])
+                        [_usWins us, _usLoses us, _usTies us, _usGames us])
 
             h2_ $ toHtml $ "Results (" <> T.pack (show nbResults) <> " last ones)"
             table_ $ do
                 tr_ $ mapM_ th_ [ "red", "yellow", "status", "board" ]
                 forM_ (take nbResults results) $ \res -> tr_ $ mapM_ (td_ . toHtml) 
-                    [ res^.rUserR, res^.rUserY, T.pack (show $ res^.rStatus), res^.rBoard ]
+                    [ _rUserR res, _rUserY res, T.pack (show $ _rStatus res), _rBoard res ]
 
 -------------------------------------------------------------------------------
 -- users
