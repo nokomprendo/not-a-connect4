@@ -97,7 +97,6 @@ nix-shell --run "cabal run nac4-client not-a-connect4.herokuapp.com 80 myname mc
 
 ## TODO (ou pas)
 
-- refactor wsapp !!!
 - maj de la page web via SSE
 - gestion de salons de jeu
 - stockage des resultats en bdd

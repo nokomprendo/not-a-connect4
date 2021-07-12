@@ -20,6 +20,8 @@ import Lucid
 import Text.Printf
 import Text.RawString.QQ
 
+-- TODO chart perf user/user
+
 -------------------------------------------------------------------------------
 -- HomeData
 -------------------------------------------------------------------------------
@@ -104,6 +106,7 @@ descUsers =
         {
           "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
           "width": 600,
+          "config": { "background": null },
           "data": {"url": "api/users-vg"},
           "transform": [
             {"fold": ["uWins", "uLoses", "uTies"], "as": ["result", "value"]},
@@ -139,6 +142,7 @@ descGames =
         {
           "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
           "data": {"url": "api/games-vg"},
+          "config": { "view": {"step": 40}, "background": null },
           "params": [{"name": "highlight", "select": "point"}],
           "mark": {"type": "rect"},
           "encoding": {
@@ -146,8 +150,7 @@ descGames =
             "x": { "field": "gUserY", "type": "nominal" },
             "fill": { "field": "gNbGames", "type": "quantitative", "scale": {"domainMin": 0,} },
             "order": {"condition": {"param": "highlight", "value": 1}, "value": 0}
-          },
-          "config": { "view": {"step": 40} }
+          }
         }
     |]
 
@@ -170,6 +173,7 @@ descTime =
         {
           "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
           "width": 600,
+          "config": { "background": null },
           "data": {"url": "api/time-vg"},
           "mark": "bar",
           "encoding": {
