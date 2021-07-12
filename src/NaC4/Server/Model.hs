@@ -55,6 +55,9 @@ data UserStats = UserStats
 makeLenses ''UserStats
 instance A.ToJSON UserStats
 
+newUserStats :: UserStats
+newUserStats = UserStats 0 0 0 0 0
+
 data Model = Model
     { _mClients     :: M.Map User WS.Connection
     , _mWaiting     :: [User]       -- TODO Set ?
@@ -85,13 +88,13 @@ addClient modelVar user conn =  atomically $ do
                 & mClients %~ M.insert user conn
                 & mWaiting %~ (user:)
                 & mNbGames %~ M.unionWith max (M.fromList $ nbGames1 ++ nbGames2)
-                & mUserStats %~ M.insertWith (\_new old -> old) user (UserStats 0 0 0 0 0)
+                & mUserStats %~ M.insertWith (\_new old -> old) user newUserStats
             return True
 
 delClient :: TVar Model -> User -> IO ()
 delClient modelVar user = atomically $ do
     m <- readTVar modelVar
-    case partition (isInBattle user) (m^.mBattles) of
+    case partition (userInBattle user) (m^.mBattles) of
         ([], _) -> writeTVar modelVar $ m 
             & mClients %~ M.delete user
             & mWaiting %~ filter (/=user)
@@ -123,8 +126,12 @@ updateStats PlayerY WinY t us0 = us0 & usWins  +~ 1 & usGames +~ 1 & usTime +~ t
 updateStats PlayerY Tie  t us0 = us0 & usTies  +~ 1 & usGames +~ 1 & usTime +~ t
 updateStats _ _ _ us0 = us0
 
-isInBattle :: User -> Battle -> Bool
-isInBattle user battle = user == battle^.bUserR || user == battle^.bUserY
+userInBattle :: User -> Battle -> Bool
+userInBattle user battle = user == battle^.bUserR || user == battle^.bUserY
+
+-- TODO test
+usersInBattle :: User -> User -> Battle -> Bool
+usersInBattle userR userY battle = userR == battle^.bUserR || userY == battle^.bUserY
 
 opponent :: User -> Battle -> User
 opponent user battle = 

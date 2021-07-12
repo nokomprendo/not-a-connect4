@@ -14,19 +14,19 @@ main = hspec spec
 spec :: Spec
 spec = do
 
-    describe "isInBattle" $ do
+    describe "userInBattle" $ do
 
         it "1" $ do
             g <- stToIO $ mkGame PlayerR
-            isInBattle "foo" (Battle "foo" "bar" g 13 37 42) `shouldBe` True
+            userInBattle "foo" (Battle "foo" "bar" g 13 37 42) `shouldBe` True
 
         it "2" $ do
             g <- stToIO $ mkGame PlayerR
-            isInBattle "bar" (Battle "foo" "bar" g 13 37 42) `shouldBe` True
+            userInBattle "bar" (Battle "foo" "bar" g 13 37 42) `shouldBe` True
 
         it "3" $ do
             g <- stToIO $ mkGame PlayerR
-            isInBattle "baz" (Battle "foo" "bar" g 13 37 42) `shouldBe` False
+            userInBattle "baz" (Battle "foo" "bar" g 13 37 42) `shouldBe` False
 
     describe "opponent" $ do
 

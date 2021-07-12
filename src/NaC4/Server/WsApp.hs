@@ -53,7 +53,7 @@ run modelVar user conn = forever $ do
         Just (P.PlayMove move) -> do
             time1 <- myGetTime
             m1 <- readTVarIO modelVar
-            let battle = m1^.mBattles & find (isInBattle user)
+            let battle = m1^.mBattles & find (userInBattle user)
             case battle of
                 Nothing -> T.putStrLn $ "invalid playmove from " <> user
                 Just bt0@(Battle userR userY g0 _ _ _) -> do
@@ -105,14 +105,15 @@ loopRunner modelVar = do
         let clients = m^.mClients
             nbGames = m^.mNbGames
             waiting = m^.mWaiting
-        let activeNbGames = M.filterWithKey (\(ur,uy) _ -> M.member ur clients && M.member uy clients) nbGames
-        -- TODO + delete if already in battles
+        let f (ur,uy) _ = M.member ur clients && M.member uy clients
+                            && not (any (usersInBattle ur uy) (m^.mBattles))
+        let activeNbGames = M.filterWithKey f nbGames
         if length (m^.mWaiting) < 2
         then return Nothing
         else do
-            let f Nothing ki ai = Just (ki,ai)
-                f (Just (k0,a0)) ki ai = if ai<a0 then Just (ki,ai) else Just (k0,a0)
-            let usersRYM = M.foldlWithKey' f Nothing activeNbGames
+            let fusers Nothing ki ai = Just (ki,ai)
+                fusers (Just (k0,a0)) ki ai = if ai<a0 then Just (ki,ai) else Just (k0,a0)
+            let usersRYM = M.foldlWithKey' fusers Nothing activeNbGames
             case usersRYM of
                 Just ((userR, userY),_) -> 
                     if userR `elem` waiting && userY `elem` waiting 
