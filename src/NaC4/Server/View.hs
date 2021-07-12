@@ -17,6 +17,7 @@ import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import GHC.Generics
 import Lucid
+import Text.Printf
 import Text.RawString.QQ
 
 -------------------------------------------------------------------------------
@@ -62,11 +63,12 @@ instance ToHtml HomeData where
                     (u : map (T.pack . show) 
                         [_usWins us, _usLoses us, _usTies us, _usGames us])
 
-            h2_ $ toHtml $ "Results (" <> T.pack (show nbResults) <> " last ones)"
+            h2_ $ toHtml $ T.pack (show nbResults) <> " last results"
             table_ $ do
-                tr_ $ mapM_ th_ [ "red", "yellow", "status", "board" ]
+                tr_ $ mapM_ th_ [ "userR", "userY", "status", "board", "timeR", "timeY" ]
                 forM_ (take nbResults results) $ \res -> tr_ $ mapM_ (td_ . toHtml) 
-                    [ _rUserR res, _rUserY res, T.pack (show $ _rStatus res), _rBoard res ]
+                    [ _rUserR res, _rUserY res, toText (_rStatus res), _rBoard res
+                    , doubleToText (_rTimeR res), doubleToText (_rTimeY res) ]
 
             h2_ "Links"
             ul_ $ do
@@ -76,6 +78,12 @@ instance ToHtml HomeData where
                 li_ $ a_ [href_ "api/games-vg"] "api/games-vg"
                 li_ $ a_ [href_ "api/users-vg"] "api/users-vg"
                 li_ $ a_ [href_ "api/time-vg"] "api/time-vg"
+
+toText :: Show a => a -> T.Text
+toText = T.pack . show
+
+doubleToText :: Double -> T.Text
+doubleToText = T.pack . printf "%.3f"
 
 -------------------------------------------------------------------------------
 -- users
@@ -136,7 +144,7 @@ descGames =
           "encoding": {
             "y": { "field": "gUserR", "type": "nominal" },
             "x": { "field": "gUserY", "type": "nominal" },
-            "fill": { "field": "gNbGames", "type": "quantitative" },
+            "fill": { "field": "gNbGames", "type": "quantitative", "scale": {"domainMin": 0,} },
             "order": {"condition": {"param": "highlight", "value": 1}, "value": 0}
           },
           "config": { "view": {"step": 40} }

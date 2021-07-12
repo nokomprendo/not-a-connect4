@@ -71,11 +71,6 @@ stack run nac4-client not-a-connect4.herokuapp.com 80 myname mc 64
 nix-shell --run "cabal run nac4-client not-a-connect4.herokuapp.com 80 myname mc 64"
 ```
 
-## Roadmap
-
-- selection des users
-- refactoring wsapp
-
 ## Changelog
 
 - puissance 4
@@ -98,9 +93,11 @@ nix-shell --run "cabal run nac4-client not-a-connect4.herokuapp.com 80 myname mc
 - repetitions des parties + stats
 - ajout des graphiques sur l'appli http
 - chronométrage des genmoves
+- sélection des users (les moins testés d'abord)
 
 ## TODO (ou pas)
 
+- refactor wsapp !!!
 - maj de la page web via SSE
 - gestion de salons de jeu
 - stockage des resultats en bdd

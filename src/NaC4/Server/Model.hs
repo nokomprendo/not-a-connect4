@@ -39,6 +39,8 @@ data Result = Result
     , _rUserY   :: User
     , _rBoard   :: P.Board
     , _rStatus  :: G.Status
+    , _rTimeR   :: Double
+    , _rTimeY   :: Double
     } deriving (Generic)
 instance A.ToJSON Result
 makeLenses ''Result
@@ -55,7 +57,7 @@ instance A.ToJSON UserStats
 
 data Model = Model
     { _mClients     :: M.Map User WS.Connection
-    , _mWaiting     :: [User]
+    , _mWaiting     :: [User]       -- TODO Set ?
     , _mNbGames     :: M.Map (User, User) Int
     , _mBattles     :: [Battle]     -- TODO map ?
     , _mResults     :: [Result]
@@ -76,9 +78,13 @@ addClient modelVar user conn =  atomically $ do
     if M.member user (m^.mClients)
         then return False
         else do 
+            let users = M.keys (m^.mClients)
+                nbGames1 = [((user,u),0) | u<-users]
+                nbGames2 = [((u,user),0) | u<-users]
             writeTVar modelVar $ m 
                 & mClients %~ M.insert user conn
                 & mWaiting %~ (user:)
+                & mNbGames %~ M.unionWith max (M.fromList $ nbGames1 ++ nbGames2)
                 & mUserStats %~ M.insertWith (\_new old -> old) user (UserStats 0 0 0 0 0)
             return True
 
@@ -98,7 +104,7 @@ delClient modelVar user = atomically $ do
 finishBattle :: TVar Model -> Battle -> P.Board -> G.Status -> IO ()
 finishBattle modelVar battle board status = atomically $ do
     let (Battle userR userY _ timeR timeY _) = battle
-        result = Result userR userY board status
+        result = Result userR userY board status timeR timeY
     m <- readTVar modelVar
     writeTVar modelVar $ m 
         & mWaiting %~ (++[userR, userY]) 

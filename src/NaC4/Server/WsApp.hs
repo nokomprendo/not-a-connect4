@@ -96,25 +96,36 @@ stop modelVar user = do
 -- runner
 -------------------------------------------------------------------------------
 
-sleepTime :: Int
-sleepTime = 1_000_000 
-
--- TODO select battles
+-- TODO refactor
 loopRunner :: TVar Model -> IO ()
 loopRunner modelVar = do
-    threadDelay sleepTime
 
     res <- atomically $ do
         m <- readTVar modelVar
-        case m^.mWaiting of
-            (userR:userY:ws) -> do
-                writeTVar modelVar (m & mWaiting .~ ws)
-                let cs = m ^. mClients
-                return $ Just (userR, userY, cs M.! userR, cs M.! userY)
-            _ -> return Nothing
+        let clients = m^.mClients
+            nbGames = m^.mNbGames
+            waiting = m^.mWaiting
+        let activeNbGames = M.filterWithKey (\(ur,uy) _ -> M.member ur clients && M.member uy clients) nbGames
+        -- TODO + delete if already in battles
+        if length (m^.mWaiting) < 2
+        then return Nothing
+        else do
+            let f Nothing ki ai = Just (ki,ai)
+                f (Just (k0,a0)) ki ai = if ai<a0 then Just (ki,ai) else Just (k0,a0)
+            let usersRYM = M.foldlWithKey' f Nothing activeNbGames
+            case usersRYM of
+                Just ((userR, userY),_) -> 
+                    if userR `elem` waiting && userY `elem` waiting 
+                    then do
+                        writeTVar modelVar (m & mWaiting %~ filter (`notElem` [userR, userY]))
+                        return $ Just (userR, userY, clients M.! userR, clients M.! userY)
+                    else return Nothing
+                _ -> return Nothing
 
     case res of
-        Nothing -> loopRunner modelVar
+        Nothing -> do
+            threadDelay 1_000_000
+            loopRunner modelVar
         Just (userR, userY, playerR, playerY) -> do
             sendMsg (NewGame userR userY) playerR
             sendMsg (NewGame userR userY) playerY
