@@ -1,0 +1,274 @@
+[
+  {
+    "_rTimeR": 0.013842640037182719,
+    "_rUserY": "Mc128",
+    "_rTimeY": 0.42254394994233735,
+    "_rBoard": "YRRYR.R.YYRR.R..YYY....RY.................",
+    "_rUserR": "Random",
+    "_rStatus": "WinY"
+  },
+  {
+    "_rTimeR": 0.6607963099086192,
+    "_rUserY": "Mc128",
+    "_rTimeY": 0.6157284599612467,
+    "_rBoard": "RYRYYYRY.YRRYRR.RRYRRY.YY.YYR.YR.RRY.RR.YY",
+    "_rUserR": "Mcts512",
+    "_rStatus": "WinY"
+  },
+  {
+    "_rTimeR": 0.48096707998774946,
+    "_rUserY": "Random",
+    "_rTimeY": 0.009322550002252683,
+    "_rBoard": "YRRRR.Y....Y..............................",
+    "_rUserR": "Mc128",
+    "_rStatus": "WinR"
+  },
+  {
+    "_rTimeR": 0.924994550034171,
+    "_rUserY": "Mcts512",
+    "_rTimeY": 0.5677141900232527,
+    "_rBoard": "RYRRYRY.YRRY...RRYR...YYYR...Y............",
+    "_rUserR": "Mc128",
+    "_rStatus": "WinY"
+  },
+  {
+    "_rTimeR": 0.009240690007572994,
+    "_rUserY": "Mcts512",
+    "_rTimeY": 0.23730865001562051,
+    "_rBoard": "R..YR.R...YY.R....Y.Y....Y.R....Y.R......R",
+    "_rUserR": "Random",
+    "_rStatus": "WinY"
+  },
+  {
+    "_rTimeR": 0.01528766003320925,
+    "_rUserY": "Mc128",
+    "_rTimeY": 0.41215773997828364,
+    "_rBoard": "RYYYY.R...R......Y......R......R..........",
+    "_rUserR": "Random",
+    "_rStatus": "WinY"
+  },
+  {
+    "_rTimeR": 0.5589110300061293,
+    "_rUserY": "Random",
+    "_rTimeY": 0.015638049982953817,
+    "_rBoard": "...RYYY...RR.Y...RR.....YR.....YR.........",
+    "_rUserR": "Mcts512",
+    "_rStatus": "WinR"
+  },
+  {
+    "_rTimeR": 0.8101252900087275,
+    "_rUserY": "Mc128",
+    "_rTimeY": 0.7646527900360525,
+    "_rBoard": "YY.RYYRYR.RRYYYR.YYRRRY.YR.R.R.YY.R.R.RR.Y",
+    "_rUserR": "Mcts512",
+    "_rStatus": "WinR"
+  },
+  {
+    "_rTimeR": 0.3395386799820699,
+    "_rUserY": "Random",
+    "_rTimeY": 0.00469507000525482,
+    "_rBoard": "Y..RYY....R......R......R.................",
+    "_rUserR": "Mc128",
+    "_rStatus": "WinR"
+  },
+  {
+    "_rTimeR": 0.6929837599745952,
+    "_rUserY": "Mcts512",
+    "_rTimeY": 0.4502866299590096,
+    "_rBoard": "YYYRYRR.YYRYYR.RRYRRY..YRRRR..YYR.....RY..",
+    "_rUserR": "Mc128",
+    "_rStatus": "WinR"
+  },
+  {
+    "_rTimeR": 0.014826719998382032,
+    "_rUserY": "Mcts512",
+    "_rTimeY": 0.3822494900377933,
+    "_rBoard": "YYYY..R...R..R...R........................",
+    "_rUserR": "Random",
+    "_rStatus": "WinY"
+  },
+  {
+    "_rTimeR": 0.016730119998101145,
+    "_rUserY": "Mc128",
+    "_rTimeY": 0.5705139999918174,
+    "_rBoard": "YYRRRYR.RYYYY...RR........................",
+    "_rUserR": "Random",
+    "_rStatus": "WinY"
+  },
+  {
+    "_rTimeR": 0.1241256300418172,
+    "_rUserY": "Random",
+    "_rTimeY": 0.023121850012103096,
+    "_rBoard": ".YRRRRY..Y................................",
+    "_rUserR": "Mcts512",
+    "_rStatus": "WinR"
+  },
+  {
+    "_rTimeR": 0.7312152099621017,
+    "_rUserY": "Mc128",
+    "_rTimeY": 0.7526527199661359,
+    "_rBoard": "RYRRRYYRYRYYYRYYRRRRRRRYY.R..YYR.Y...YR.Y.",
+    "_rUserR": "Mcts512",
+    "_rStatus": "WinR"
+  },
+  {
+    "_rTimeR": 0.4838022800104227,
+    "_rUserY": "Random",
+    "_rTimeY": 0.009098049980821088,
+    "_rBoard": "Y.RRRR....Y.Y.............................",
+    "_rUserR": "Mc128",
+    "_rStatus": "WinR"
+  },
+  {
+    "_rTimeR": 0.6481338899175171,
+    "_rUserY": "Mcts512",
+    "_rTimeY": 0.49885736004216596,
+    "_rBoard": "RRRYRYYRYRRY.YYYYRR.RRRYYY.RYYYYR.RR.RYR.Y",
+    "_rUserR": "Mc128",
+    "_rStatus": "WinY"
+  },
+  {
+    "_rTimeR": 0.013417619979009032,
+    "_rUserY": "Mcts512",
+    "_rTimeY": 0.412757350015454,
+    "_rBoard": "R.RY.RR...Y......Y......Y.................",
+    "_rUserR": "Random",
+    "_rStatus": "WinY"
+  },
+  {
+    "_rTimeR": 0.007228769944049418,
+    "_rUserY": "Mc128",
+    "_rTimeY": 0.1834336800093297,
+    "_rBoard": "YYYY.RR...R.R.............................",
+    "_rUserR": "Random",
+    "_rStatus": "WinY"
+  },
+  {
+    "_rTimeR": 0.11868653996498324,
+    "_rUserY": "Random",
+    "_rTimeY": 0.004910379997454584,
+    "_rBoard": "RRRRY.Y..Y................................",
+    "_rUserR": "Mcts512",
+    "_rStatus": "WinR"
+  },
+  {
+    "_rTimeR": 0.45751352002844214,
+    "_rUserY": "Mc128",
+    "_rTimeY": 0.49539239006116986,
+    "_rBoard": "YRYRYYYYYYRRRRRRRYY.RYR.YR.YYY.RR.YRR.RY.R",
+    "_rUserR": "Mcts512",
+    "_rStatus": "WinR"
+  },
+  {
+    "_rTimeR": 0.16119954999885522,
+    "_rUserY": "Random",
+    "_rTimeY": 0.004287579999072477,
+    "_rBoard": "Y..RY.Y...R......R......R.................",
+    "_rUserR": "Mc128",
+    "_rStatus": "WinR"
+  },
+  {
+    "_rTimeR": 0.7518310999439564,
+    "_rUserY": "Mcts512",
+    "_rTimeY": 0.4849965700414032,
+    "_rBoard": "YRRYR.YYYYRR.RRRRRY.YRY.YY.YYY.YR.YRR.RR.R",
+    "_rUserR": "Mc128",
+    "_rStatus": "WinR"
+  },
+  {
+    "_rTimeR": 0.02015384001424536,
+    "_rUserY": "Mcts512",
+    "_rTimeY": 0.5752010599535424,
+    "_rBoard": "YRRRYRRRYRYY....YY.....RY.................",
+    "_rUserR": "Random",
+    "_rStatus": "WinY"
+  },
+  {
+    "_rTimeR": 0.028190969955176115,
+    "_rUserY": "Mc128",
+    "_rTimeY": 0.8203006399853621,
+    "_rBoard": "RYRYR.RRYYYY..YR.R...Y..R...Y..R...R..Y...",
+    "_rUserR": "Random",
+    "_rStatus": "WinY"
+  },
+  {
+    "_rTimeR": 0.27698490998591296,
+    "_rUserY": "Random",
+    "_rTimeY": 0.0072010899893939495,
+    "_rBoard": "RRRRYYY...................................",
+    "_rUserR": "Mcts512",
+    "_rStatus": "WinR"
+  },
+  {
+    "_rTimeR": 0.5947378800192382,
+    "_rUserY": "Mc128",
+    "_rTimeY": 0.5755148100433871,
+    "_rBoard": "..RYRYR..RYRYR..YRYY...RYYR...RYR....Y....",
+    "_rUserR": "Mcts512",
+    "_rStatus": "WinY"
+  },
+  {
+    "_rTimeR": 0.15960298001300544,
+    "_rUserY": "Random",
+    "_rTimeY": 0.00476102001266554,
+    "_rBoard": "YYRRRR....Y...............................",
+    "_rUserR": "Mc128",
+    "_rStatus": "WinR"
+  },
+  {
+    "_rTimeR": 0.5405050300469156,
+    "_rUserY": "Mcts512",
+    "_rTimeY": 0.43829438992543146,
+    "_rBoard": "YY.RYRRYR.RRYRRY.RYRYRY.YY.RYR.YY.YRY.RR.R",
+    "_rUserR": "Mc128",
+    "_rStatus": "WinR"
+  },
+  {
+    "_rTimeR": 0.007344229961745441,
+    "_rUserY": "Mcts512",
+    "_rTimeY": 0.15772315001231618,
+    "_rBoard": "RRRYR.RYYYY...............................",
+    "_rUserR": "Random",
+    "_rStatus": "WinY"
+  },
+  {
+    "_rTimeR": 0.015657769981771708,
+    "_rUserY": "Mc128",
+    "_rTimeY": 0.5643455700192135,
+    "_rBoard": ".RRYRR....Y......Y......Y.................",
+    "_rUserR": "Random",
+    "_rStatus": "WinY"
+  },
+  {
+    "_rTimeR": 0.5343708200089168,
+    "_rUserY": "Random",
+    "_rTimeY": 0.01582523001707159,
+    "_rBoard": "Y..RY.Y...R......R......R.................",
+    "_rUserR": "Mcts512",
+    "_rStatus": "WinR"
+  },
+  {
+    "_rTimeR": 0.8540496600326151,
+    "_rUserY": "Mc128",
+    "_rTimeY": 0.8470676399301738,
+    "_rBoard": "YYYRYRRRYRYRRYYYYRYYRYRYRRR.YYRYRY.RRYRRR.",
+    "_rUserR": "Mcts512",
+    "_rStatus": "WinR"
+  },
+  {
+    "_rTimeR": 0.8728556499700062,
+    "_rUserY": "Mcts512",
+    "_rTimeY": 0.660146519949194,
+    "_rBoard": "RYRRY.YYRRYY.RYYRRR.YRR.RY.Y.Y.RR.R...YY..",
+    "_rUserR": "Mc128",
+    "_rStatus": "WinR"
+  },
+  {
+    "_rTimeR": 0.2424233200144954,
+    "_rUserY": "Random",
+    "_rTimeY": 0.010217919974820688,
+    "_rBoard": ".Y.RYY....RRR....RY.....RY................",
+    "_rUserR": "Mc128",
+    "_rStatus": "WinR"
+  }
+]

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "data": {"url": "results.json"},
+  "params": [{"name": "highlight", "select": "point"}],
+  "mark": {"type": "rect"},
+  "encoding": {
+    "y": { "field": "_rUserR", "type": "nominal" },
+    "x": { "field": "_rUserY", "type": "nominal" },
+    "color": {
+      "aggregate": "mean", 
+      "field": "score",
+      "scale": {"scheme": "plasma"}
+    }
+  },
+  "transform": [
+    {"calculate": "if(datum._rStatus === 'WinR', 1, if(datum._rStatus === 'Tie', 0, -1))", "as": "score"}
+  ],
+  "config": {
+    "view": {"step": 30},
+    "axis": {"grid": true, "tickBand": "extent"}
+  }
+}
+

@@ -9,6 +9,9 @@
     "fill": { "field": "nbGames", "type": "quantitative" },
     "order": {"condition": {"param": "highlight", "value": 1}, "value": 0}
   },
-  "config": { "view": {"step": 40} }
+  "config": { 
+    "view": {"step": 30},
+    "axis": {"grid": true, "tickBand": "extent"}
+  }
 }
 

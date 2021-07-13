@@ -51,12 +51,11 @@ instance ToHtml HomeData where
             h1_ "Not a Connect4"
 
             h2_ "Summary"
-            p_ $ div_ [id_ "plotGames"] $ script_ $ 
-                "vegaEmbed('#plotGames', " <> descGames <> ");"
-            p_ $ div_ [id_ "plotUsers"] $ script_ $ 
-                "vegaEmbed('#plotUsers', " <> descUsers <> ");"
-            p_ $ div_ [id_ "plotTime"] $ script_ $ 
-                "vegaEmbed('#plotTime', " <> descTime <> ");"
+            p_ $ do
+                div_ [id_ "plotGames"] $ script_ $ "vegaEmbed('#plotGames', " <> descGames <> ");"
+                div_ [id_ "plotResults"] $ script_ $ "vegaEmbed('#plotResults', " <> descResults <> ");"
+            p_ $ div_ [id_ "plotUsers"] $ script_ $ "vegaEmbed('#plotUsers', " <> descUsers <> ");"
+            p_ $ div_ [id_ "plotTime"] $ script_ $ "vegaEmbed('#plotTime', " <> descTime <> ");"
 
             h2_ "Users"
             table_ $ do
@@ -102,27 +101,25 @@ instance A.ToJSON UsersVg
 
 descUsers :: T.Text
 descUsers = 
-    [r|
-        {
-          "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-          "width": 600,
-          "config": { "background": null },
-          "data": {"url": "api/users-vg"},
-          "transform": [
-            {"fold": ["uWins", "uLoses", "uTies"], "as": ["result", "value"]},
-            {"calculate": "if(datum.result === 'uWins', 0, if(datum.result === 'uLoses', 1, 2))", "as": "siteOrder"}
-            ],
-          "mark": "bar",
-          "encoding": {
-            "y": {"type": "ordinal", "field": "uUser"},
-            "x": {"type": "quantitative", "field": "value"},
-            "color": {"type": "nominal", "field": "result",
-                "scale": { "domain": [ "uWins", "uLoses", "uTies" ] }
-            },
-            "order": {"field": "siteOrder"}
-          }
-        }
-    |]
+    [r| {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "width": 600,
+      "config": { "background": null },
+      "data": {"url": "api/users-vg"},
+      "transform": [
+        {"fold": ["uWins", "uLoses", "uTies"], "as": ["result", "value"]},
+        {"calculate": "if(datum.result === 'uWins', 0, if(datum.result === 'uLoses', 1, 2))", "as": "siteOrder"}
+      ],
+      "mark": "bar",
+      "encoding": {
+        "y": {"type": "ordinal", "field": "uUser"},
+        "x": {"type": "quantitative", "field": "value"},
+        "color": {"type": "nominal", "field": "result",
+            "scale": { "domain": [ "uWins", "uLoses", "uTies" ] }
+        },
+        "order": {"field": "siteOrder"}
+      }
+    } |]
 
 -------------------------------------------------------------------------------
 -- games
@@ -138,21 +135,23 @@ instance A.ToJSON GamesVg
 
 descGames :: T.Text
 descGames = 
-    [r|
-        {
-          "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-          "data": {"url": "api/games-vg"},
-          "config": { "view": {"step": 40}, "background": null },
-          "params": [{"name": "highlight", "select": "point"}],
-          "mark": {"type": "rect"},
-          "encoding": {
-            "y": { "field": "gUserR", "type": "nominal" },
-            "x": { "field": "gUserY", "type": "nominal" },
-            "fill": { "field": "gNbGames", "type": "quantitative", "scale": {"domainMin": 0,} },
-            "order": {"condition": {"param": "highlight", "value": 1}, "value": 0}
-          }
-        }
-    |]
+    [r| {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "data": {"url": "api/games-vg"},
+      "config": { 
+        "view": {"step": 30},
+        "axis": {"grid": true, "tickBand": "extent"},
+        "background": null
+      },
+      "params": [{"name": "highlight", "select": "point"}],
+      "mark": {"type": "rect"},
+      "encoding": {
+        "y": { "field": "gUserR", "type": "nominal" },
+        "x": { "field": "gUserY", "type": "nominal" },
+        "fill": { "field": "gNbGames", "type": "quantitative", "scale": {"domainMin": 0,} },
+        "order": {"condition": {"param": "highlight", "value": 1}, "value": 0}
+      }
+    } |]
 
 -------------------------------------------------------------------------------
 -- time
@@ -169,17 +168,45 @@ instance A.ToJSON TimeVg
 
 descTime :: T.Text
 descTime = 
-    [r|
-        {
-          "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-          "width": 600,
-          "config": { "background": null },
-          "data": {"url": "api/time-vg"},
-          "mark": "bar",
-          "encoding": {
-            "y": {"type": "ordinal", "field": "tUser"},
-            "x": {"type": "quantitative", "field": "tAvg"}
-          }
+    [r| {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "width": 600,
+      "config": { "background": null },
+      "data": {"url": "api/time-vg"},
+      "mark": "bar",
+      "encoding": {
+        "y": {"type": "ordinal", "field": "tUser"},
+        "x": {"type": "quantitative", "field": "tAvg"}
+      }
+    } |]
+
+-------------------------------------------------------------------------------
+-- results
+-------------------------------------------------------------------------------
+
+descResults :: T.Text
+descResults = 
+    [r| {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "data": {"url": "api/results"},
+      "params": [{"name": "highlight", "select": "point"}],
+      "mark": {"type": "rect"},
+      "encoding": {
+        "y": { "field": "_rUserR", "type": "nominal" },
+        "x": { "field": "_rUserY", "type": "nominal" },
+        "color": {
+          "aggregate": "mean", 
+          "field": "score",
+          "scale": {"scheme": "plasma"}
         }
-    |]
+      },
+      "transform": [
+        {"calculate": "if(datum._rStatus === 'WinR', 1, if(datum._rStatus === 'Tie', 0, -1))", "as": "score"}
+      ],
+      "config": {
+        "background": null,
+        "view": {"step": 30},
+        "axis": {"grid": true, "tickBand": "extent"}
+      }
+    } |]
 
