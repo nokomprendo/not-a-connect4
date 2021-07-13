@@ -17,11 +17,14 @@ import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Time.Clock (diffTimeToPicoseconds, utctDayTime)
-import Data.Time.Clock.POSIX (getCurrentTime)
+import Data.Time.Clock.POSIX (getCurrentTime, utcTimeToPOSIXSeconds)
 import Lens.Micro.Platform
 import Network.Wai (Application)
 import Network.Wai.Handler.WebSockets (websocketsOr)
 import qualified Network.WebSockets as WS
+
+maxNbGames :: Int
+maxNbGames = 10
 
 -------------------------------------------------------------------------------
 -- wsApp
@@ -41,7 +44,9 @@ serverApp modelVar pc = do
             if ok 
             then do
                 sendMsg (Connected $ "hello " <> user) conn
-                finally (run modelVar user conn) (stop modelVar user)
+                -- let app = run modelVar user conn
+                let app = WS.withPingThread conn 30 (return ()) (run modelVar user conn)
+                finally app (stop modelVar user)
             else sendMsg (NotConnected $ user <> " already used") conn
         _ -> T.putStrLn "unknown query"
 
@@ -107,6 +112,7 @@ loopRunner modelVar = do
             waiting = m^.mWaiting
         let f (ur,uy) _ = M.member ur clients && M.member uy clients
                             && not (any (usersInBattle ur uy) (m^.mBattles))
+                            && (m^.mNbGames) M.! (ur,uy) < maxNbGames
         let activeNbGames = M.filterWithKey f nbGames
         if length (m^.mWaiting) < 2
         then return Nothing
@@ -150,5 +156,6 @@ sendMsg msg conn = WS.sendTextData conn (fmtMsgToClient msg)
 
 myGetTime :: IO Double
 myGetTime = 
-    (* 10e-12) . fromIntegral . diffTimeToPicoseconds . utctDayTime <$> getCurrentTime
+    let itod = fromIntegral :: Int -> Double
+    in (0.001*) . itod . round <$> ((1000*) . utcTimeToPOSIXSeconds <$> getCurrentTime)
 

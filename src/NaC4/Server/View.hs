@@ -20,14 +20,12 @@ import Lucid
 import Text.Printf
 import Text.RawString.QQ
 
--- TODO chart perf user/user
+nbResults :: Int
+nbResults = 20
 
 -------------------------------------------------------------------------------
 -- HomeData
 -------------------------------------------------------------------------------
-
-nbResults :: Int
-nbResults = 20
 
 newtype HomeData = HomeData ([Result], M.Map User UserStats)
 
@@ -42,7 +40,7 @@ instance ToHtml HomeData where
             title_ "Not a Connect4"
             style_ "table, tr, th, td {border: 1px solid black; border-collapse: collapse}"
             style_ "th, td {padding: 0 10px 0 10px}"
-            style_ "body {background-color: beige}"
+            style_ "body {background-color: darkseagreen}"
             script_ [src_ "https://cdn.jsdelivr.net/npm/vega@5"] ("" :: T.Text)
             script_ [src_ "https://cdn.jsdelivr.net/npm/vega-lite@5"] ("" :: T.Text)
             script_ [src_ "https://cdn.jsdelivr.net/npm/vega-embed@6"] ("" :: T.Text)
@@ -148,7 +146,11 @@ descGames =
       "encoding": {
         "y": { "field": "gUserR", "type": "nominal" },
         "x": { "field": "gUserY", "type": "nominal" },
-        "fill": { "field": "gNbGames", "type": "quantitative", "scale": {"domainMin": 0,} },
+        "fill": {
+          "scale": {"domainMin": 0, "scheme": "plasma"},
+          "field": "gNbGames",
+          "type": "quantitative"
+        },
         "order": {"condition": {"param": "highlight", "value": 1}, "value": 0}
       }
     } |]

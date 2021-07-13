@@ -94,6 +94,8 @@ nix-shell --run "cabal run nac4-client not-a-connect4.herokuapp.com 80 myname mc
 - ajout des graphiques sur l'appli http
 - chronométrage des genmoves
 - sélection des users (les moins testés d'abord)
+- plot du détail des scores
+- limite max du nb de parties
 
 ## TODO (ou pas)
 

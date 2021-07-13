@@ -6,7 +6,11 @@
   "encoding": {
     "y": { "field": "userR", "type": "nominal" },
     "x": { "field": "userY", "type": "nominal" },
-    "fill": { "field": "nbGames", "type": "quantitative" },
+    "fill": {
+      "scale": {"domainMin": 0, "scheme": "plasma"},
+      "field": "nbGames",
+      "type": "quantitative"
+    },
     "order": {"condition": {"param": "highlight", "value": 1}, "value": 0}
   },
   "config": { 
