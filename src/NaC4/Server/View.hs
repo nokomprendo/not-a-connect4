@@ -43,17 +43,18 @@ instance ToHtml HomeData where
             style_ "body {background-color: darkseagreen}"
             script_ [src_ "https://cdn.jsdelivr.net/npm/vega@5"] ("" :: T.Text)
             script_ [src_ "https://cdn.jsdelivr.net/npm/vega-lite@5"] ("" :: T.Text)
-            script_ [src_ "https://cdn.jsdelivr.net/npm/vega-embed@6"] ("" :: T.Text)
+            script_ [src_ "https://cdn.jsdelivr.net/npm/vega-embed@5"] ("" :: T.Text)
 
         body_ $ do
             h1_ "Not a Connect4"
 
             h2_ "Summary"
             p_ $ do
-                div_ [id_ "plotGames"] $ script_ $ "vegaEmbed('#plotGames', " <> descGames <> ");"
-                div_ [id_ "plotResults"] $ script_ $ "vegaEmbed('#plotResults', " <> descResults <> ");"
-            p_ $ div_ [id_ "plotUsers"] $ script_ $ "vegaEmbed('#plotUsers', " <> descUsers <> ");"
-            p_ $ div_ [id_ "plotTime"] $ script_ $ "vegaEmbed('#plotTime', " <> descTime <> ");"
+                mkPlot "Games" descGames
+                mkPlot "Results" descResults
+
+            mkPlot "Users" descUsers
+            mkPlot "Time" descTime
 
             h2_ "Users"
             table_ $ do
@@ -78,11 +79,40 @@ instance ToHtml HomeData where
                 li_ $ a_ [href_ "api/users-vg"] "api/users-vg"
                 li_ $ a_ [href_ "api/time-vg"] "api/time-vg"
 
+            script_ updateScript
+
 toText :: Show a => a -> T.Text
 toText = T.pack . show
 
 doubleToText :: Double -> T.Text
 doubleToText = T.pack . printf "%.3f"
+
+mkPlot :: Monad m => T.Text -> T.Text -> HtmlT m ()
+mkPlot name desc = 
+    div_ [id_ ("plot" <> name)] 
+        $ script_ $ "vegaEmbed('#plot" <> name <> "', " <> desc 
+            <> ").then(p => window.view" <> name <> " = p.view);"
+
+updateScript :: T.Text
+updateScript = 
+    [r|
+    function fetch_plot(url, view) {
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                let changeset = vega.changeset().remove(() => true).insert(data);
+                view.change('source_0', changeset).run()});
+    }
+
+    function my_update() {
+        fetch_plot("api/games-vg", viewGames);
+        fetch_plot("api/results", viewResults);
+        fetch_plot("api/users-vg", viewUsers);
+        fetch_plot("api/time-vg", viewTime);
+    }
+
+    const my_interval = setInterval(my_update, 2000);
+    |]
 
 -------------------------------------------------------------------------------
 -- users
