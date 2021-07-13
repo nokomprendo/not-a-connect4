@@ -137,3 +137,15 @@ opponent :: User -> Battle -> User
 opponent user battle = 
     if user == battle^.bUserR then battle^.bUserY else battle^.bUserR
 
+-- TODO refactor ?
+clearAll :: TVar Model -> IO ()
+clearAll modelVar =
+    atomically $ modifyTVar' modelVar $ \m -> 
+        m & mBattles .~ []
+            & mWaiting .~ M.keys (m^.mClients)
+            & mResults .~ []
+            & mUserStats %~ M.filterWithKey (\u _ -> M.member u (m^.mClients))
+            & mUserStats %~ M.map (const newUserStats)
+            & mNbGames %~ M.filterWithKey (\(ur,uy) _ -> M.member ur (m^.mClients) && M.member uy (m^.mClients))
+            & mNbGames %~ M.map (const 0)
+

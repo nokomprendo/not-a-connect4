@@ -13,7 +13,6 @@ import NaC4.Server.View
 import Control.Concurrent.STM
 import Control.Monad.IO.Class
 import qualified Data.Map.Strict as M
-import Lens.Micro.Platform
 import Servant
 import Servant.HTML.Lucid
 
@@ -66,19 +65,9 @@ handleTimeVg modelVar = do
                         in TimeVg u t g (t / fromIntegral g)
     return $ map fmt stats
 
--- TODO implement a clear function in Model
 handleClear :: TVar Model -> Handler String
-handleClear modelVar = do
-    liftIO $ atomically $ modifyTVar' modelVar $ \m -> 
-        m & mBattles .~ []
-            & mWaiting .~ M.keys (m^.mClients)
-            & mResults .~ []
-            & mUserStats %~ M.filterWithKey (\u _ -> M.member u (m^.mClients))
-            & mUserStats %~ M.map (const newUserStats)
-            & mNbGames %~ M.filterWithKey (\(ur,uy) _ -> M.member ur (m^.mClients) && M.member uy (m^.mClients))
-            & mNbGames %~ M.map (const 0)
-    return "done"
- 
+handleClear modelVar = liftIO (clearAll modelVar) >> return "done"
+
 handleHome :: TVar Model -> Handler HomeData
 handleHome modelVar = do
     m <- liftIO $ readTVarIO modelVar
