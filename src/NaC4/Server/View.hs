@@ -57,18 +57,25 @@ instance ToHtml HomeData where
             mkPlot "Time" descTime
 
             h2_ "Users"
-            table_ $ do
+            table_ [id_ "idUsers"] $ do
                 tr_ $ mapM_ th_ [ "user", "wins", "loses", "ties", "games" ]
+
+            {-
                 forM_ (M.toAscList users) $ \(u, us) -> tr_ $ mapM_ (td_ . toHtml) 
                     (u : map (T.pack . show) 
                         [_usWins us, _usLoses us, _usTies us, _usGames us])
+            -}
 
             h2_ $ toHtml $ T.pack (show nbResults) <> " last results"
+            div_ [id_ "idResults"] mempty
+
+            {-
             table_ $ do
                 tr_ $ mapM_ th_ [ "userR", "userY", "status", "board", "timeR", "timeY" ]
                 forM_ (take nbResults results) $ \res -> tr_ $ mapM_ (td_ . toHtml) 
                     [ _rUserR res, _rUserY res, toText (_rStatus res), _rBoard res
                     , doubleToText (_rTimeR res), doubleToText (_rTimeY res) ]
+            -}
 
             h2_ "Links"
             ul_ $ do
@@ -81,11 +88,13 @@ instance ToHtml HomeData where
 
             script_ updateScript
 
+{-
 toText :: Show a => a -> T.Text
 toText = T.pack . show
 
 doubleToText :: Double -> T.Text
 doubleToText = T.pack . printf "%.3f"
+-}
 
 mkPlot :: Monad m => T.Text -> T.Text -> HtmlT m ()
 mkPlot name desc = 
@@ -110,6 +119,9 @@ updateScript =
         fetch_plot("api/users-vg", viewUsers);
         fetch_plot("api/time-vg", viewTime);
     }
+
+    // TODO idUsers
+    // TODO idResults
 
     const my_interval = setInterval(my_update, 2000);
     |]
