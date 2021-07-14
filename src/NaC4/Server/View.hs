@@ -102,24 +102,26 @@ updateScript =
 
     function my_update() {
         fetch_json("api/games-vg", jsonData => update_vg(jsonData, viewGames));
-        fetch_json("api/results", jsonData => update_vg(jsonData, viewResults));
-        fetch_json("api/users-vg", jsonData => update_vg(jsonData, viewTime));
-        fetch_json("api/users-vg", jsonData => update_vg(jsonData, viewUsers));
     
         fetch_json("api/users-vg", jsonData => {
+            update_vg(jsonData, viewTime);
+            update_vg(jsonData, viewUsers);
+
             idUsers.textContent = "";
-            const fields = ["uUser","uWins","uLoses","uTies","uGames","uTime"];
+            const fields = ["uUser","uWins","uLoses","uTies","uGames","uTime","uAvgTime"];
             add_ths(idUsers, fields);
             jsonData.map(user => add_tds(idUsers, user, fields));
-            })
+        })
  
         fetch_json("api/results", jsonData => {
+            update_vg(jsonData, viewResults);
+
             idResults.textContent = "";
             const fields = ["_rUserR","_rUserY","_rStatus","_rBoard","_rTimeR","_rTimeY"];
             add_ths(idResults, fields);
             const nbRes = |] <> T.pack (show nbResults) <> [r|
             jsonData.slice(0,nbRes).map(result => add_tds(idResults, result, fields));
-            })
+        })
 
     }
 
