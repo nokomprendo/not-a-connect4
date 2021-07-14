@@ -1,0 +1,4 @@
+ffmpeg -ss 00:00:20 -i nac4.mkv -t 00:00:20 -c:copy nac4-20-40.mkv
+
+ffmpeg -i nac4-20-40.mkv -r 0.5 -f image2pipe -vcodec ppm - | convert -delay 120 -loop 0 - gif:- | gifsicle -O2 --colors 64 -o nac4.gif
+
