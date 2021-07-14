@@ -8,16 +8,10 @@
 
 module NaC4.Server.View where
 
-import NaC4.Protocol
-import NaC4.Server.Model
-
-import Control.Monad
 import qualified Data.Aeson as A
-import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import GHC.Generics
 import Lucid
-import Text.Printf
 import Text.RawString.QQ
 
 nbResults :: Int
@@ -27,12 +21,12 @@ nbResults = 20
 -- HomeData
 -------------------------------------------------------------------------------
 
-newtype HomeData = HomeData ([Result], M.Map User UserStats)
+data HomeData = HomeData
 
 instance ToHtml HomeData where
     toHtmlRaw = toHtml
 
-    toHtml (HomeData (results, users)) = doctypehtml_ $ do
+    toHtml HomeData = doctypehtml_ $ do
         head_ $ do
             meta_ [charset_ "utf-8"]
             meta_ [ name_ "viewport"
@@ -57,44 +51,19 @@ instance ToHtml HomeData where
             mkPlot "Time" descTime
 
             h2_ "Users"
-            table_ [id_ "idUsers"] $ do
-                tr_ $ mapM_ th_ [ "user", "wins", "loses", "ties", "games" ]
-
-            {-
-                forM_ (M.toAscList users) $ \(u, us) -> tr_ $ mapM_ (td_ . toHtml) 
-                    (u : map (T.pack . show) 
-                        [_usWins us, _usLoses us, _usTies us, _usGames us])
-            -}
+            table_ [id_ "idUsers"] mempty
 
             h2_ $ toHtml $ T.pack (show nbResults) <> " last results"
-            div_ [id_ "idResults"] mempty
-
-            {-
-            table_ $ do
-                tr_ $ mapM_ th_ [ "userR", "userY", "status", "board", "timeR", "timeY" ]
-                forM_ (take nbResults results) $ \res -> tr_ $ mapM_ (td_ . toHtml) 
-                    [ _rUserR res, _rUserY res, toText (_rStatus res), _rBoard res
-                    , doubleToText (_rTimeR res), doubleToText (_rTimeY res) ]
-            -}
+            table_ [id_ "idResults"] mempty
 
             h2_ "Links"
             ul_ $ do
                 li_ $ a_ [href_ "https://github.com/nokomprendo/not-a-connect4"] "source code"
-                li_ $ a_ [href_ "api/users"] "api/users"
                 li_ $ a_ [href_ "api/results"] "api/results"
                 li_ $ a_ [href_ "api/games-vg"] "api/games-vg"
                 li_ $ a_ [href_ "api/users-vg"] "api/users-vg"
-                li_ $ a_ [href_ "api/time-vg"] "api/time-vg"
 
             script_ updateScript
-
-{-
-toText :: Show a => a -> T.Text
-toText = T.pack . show
-
-doubleToText :: Double -> T.Text
-doubleToText = T.pack . printf "%.3f"
--}
 
 mkPlot :: Monad m => T.Text -> T.Text -> HtmlT m ()
 mkPlot name desc = 
@@ -105,23 +74,54 @@ mkPlot name desc =
 updateScript :: T.Text
 updateScript = 
     [r|
-    function fetch_plot(url, view) {
+
+    function fetch_json(url, jsonFunc) {
         fetch(url)
             .then(r => r.json())
-            .then(data => {
-                let changeset = vega.changeset().remove(() => true).insert(data);
-                view.change('source_0', changeset).run()});
+            .then(jsonFunc);
+    }
+
+    function update_vg(jsonData, view) {
+        let changeset = vega.changeset().remove(() => true).insert(jsonData);
+        view.change('source_0', changeset).run();
+    }
+
+    function add_ths(node, labels) {
+        row = document.createElement("tr");
+        labels.map(l => 
+            row.appendChild(document.createElement("th")).textContent = l);
+        node.appendChild(row);
+    }
+
+    function add_tds(node, jsonData, labels) {
+        row = document.createElement("tr");
+        labels.map(l => 
+            row.appendChild(document.createElement("td")).textContent = jsonData[l]);
+        node.appendChild(row);
     }
 
     function my_update() {
-        fetch_plot("api/games-vg", viewGames);
-        fetch_plot("api/results", viewResults);
-        fetch_plot("api/users-vg", viewUsers);
-        fetch_plot("api/time-vg", viewTime);
-    }
+        fetch_json("api/games-vg", jsonData => update_vg(jsonData, viewGames));
+        fetch_json("api/results", jsonData => update_vg(jsonData, viewResults));
+        fetch_json("api/users-vg", jsonData => update_vg(jsonData, viewTime));
+        fetch_json("api/users-vg", jsonData => update_vg(jsonData, viewUsers));
+    
+        fetch_json("api/users-vg", jsonData => {
+            idUsers.textContent = "";
+            const fields = ["uUser","uWins","uLoses","uTies","uGames","uTime"];
+            add_ths(idUsers, fields);
+            jsonData.map(user => add_tds(idUsers, user, fields));
+            })
+ 
+        fetch_json("api/results", jsonData => {
+            idResults.textContent = "";
+            const fields = ["_rUserR","_rUserY","_rStatus","_rBoard","_rTimeR","_rTimeY"];
+            add_ths(idResults, fields);
+            const nbRes = |] <> T.pack (show nbResults) <> [r|
+            jsonData.slice(0,nbRes).map(result => add_tds(idResults, result, fields));
+            })
 
-    // TODO idUsers
-    // TODO idResults
+    }
 
     const my_interval = setInterval(my_update, 2000);
     |]
@@ -135,6 +135,9 @@ data UsersVg = UsersVg
     , uWins :: Int
     , uLoses :: Int
     , uTies :: Int
+    , uGames :: Int
+    , uTime :: Double
+    , uAvgTime :: Double
     } deriving (Generic)
 
 instance A.ToJSON UsersVg
@@ -147,17 +150,31 @@ descUsers =
       "config": { "background": null },
       "data": {"url": "api/users-vg"},
       "transform": [
-        {"fold": ["uWins", "uLoses", "uTies"], "as": ["result", "value"]},
-        {"calculate": "if(datum.result === 'uWins', 0, if(datum.result === 'uLoses', 1, 2))", "as": "siteOrder"}
+          {"fold": ["uWins", "uLoses", "uTies"], "as": ["result", "value"]},
+          {"calculate": "if(datum.result === 'uWins', 0, if(datum.result === 'uLoses', 1, 2))", "as": "stats"}
       ],
       "mark": "bar",
       "encoding": {
+          "y": {"type": "ordinal", "field": "uUser"},
+          "x": {"type": "quantitative", "field": "value"},
+          "color": {"type": "nominal", "field": "result",
+              "scale": { "domain": [ "uWins", "uLoses", "uTies" ] }
+          },
+          "order": {"field": "stats"}
+      }
+    } |]
+
+descTime :: T.Text
+descTime = 
+    [r| {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "width": 600,
+      "config": { "background": null },
+      "data": {"url": "api/users-vg"},
+      "mark": "bar",
+      "encoding": {
         "y": {"type": "ordinal", "field": "uUser"},
-        "x": {"type": "quantitative", "field": "value"},
-        "color": {"type": "nominal", "field": "result",
-            "scale": { "domain": [ "uWins", "uLoses", "uTies" ] }
-        },
-        "order": {"field": "siteOrder"}
+        "x": {"type": "quantitative", "field": "uAvgTime"}
       }
     } |]
 
@@ -194,33 +211,6 @@ descGames =
           "type": "quantitative"
         },
         "order": {"condition": {"param": "highlight", "value": 1}, "value": 0}
-      }
-    } |]
-
--------------------------------------------------------------------------------
--- time
--------------------------------------------------------------------------------
-
-data TimeVg = TimeVg
-    { tUser :: T.Text
-    , tTime :: Double
-    , tGames :: Int
-    , tAvg :: Double
-    } deriving (Generic)
-
-instance A.ToJSON TimeVg
-
-descTime :: T.Text
-descTime = 
-    [r| {
-      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-      "width": 600,
-      "config": { "background": null },
-      "data": {"url": "api/time-vg"},
-      "mark": "bar",
-      "encoding": {
-        "y": {"type": "ordinal", "field": "tUser"},
-        "x": {"type": "quantitative", "field": "tAvg"}
       }
     } |]
 

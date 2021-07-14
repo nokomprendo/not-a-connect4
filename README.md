@@ -96,10 +96,10 @@ nix-shell --run "cabal run nac4-client not-a-connect4.herokuapp.com 80 myname mc
 - sélection des users (les moins testés d'abord)
 - plot du détail des scores
 - limite max du nb de parties
+- page dynamique
 
 ## TODO (ou pas)
 
-- maj de la page web via SSE
 - gestion de salons de jeu
 - stockage des resultats en bdd
 - gestion du temps de jeu

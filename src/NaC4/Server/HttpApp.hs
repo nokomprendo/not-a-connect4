@@ -6,7 +6,6 @@
 
 module NaC4.Server.HttpApp (httpApp) where
 
-import NaC4.Protocol
 import NaC4.Server.Model
 import NaC4.Server.View
 
@@ -17,61 +16,41 @@ import Servant
 import Servant.HTML.Lucid
 
 type ApiResultsRoute = "api" :> "results" :> Get '[JSON] [Result]
-type ApiUsersRoute = "api" :> "users" :> Get '[JSON] (M.Map User UserStats)
 type ApiUsersVgRoute = "api" :> "users-vg" :> Get '[JSON] [UsersVg]
 type ApiGamesVgRoute = "api" :> "games-vg" :> Get '[JSON] [GamesVg]
-type ApiTimeVgRoute = "api" :> "time-vg" :> Get '[JSON] [TimeVg]
 type ClearRoute = "clear" :> Get '[PlainText] String
 type HomeRoute = Get '[HTML] HomeData
 
 type ServerApi
     =    ApiResultsRoute
-    :<|> ApiUsersRoute
     :<|> ApiUsersVgRoute
     :<|> ApiGamesVgRoute
-    :<|> ApiTimeVgRoute
     :<|> ClearRoute
     :<|> HomeRoute
 
 handleServerApi :: TVar Model -> Server ServerApi
 handleServerApi modelVar
     =    handleGetInModel _mResults modelVar
-    :<|> handleGetInModel _mUserStats modelVar
     :<|> handleUsersVg modelVar
     :<|> handleGamesVg modelVar
-    :<|> handleTimeVg modelVar
     :<|> handleClear modelVar
-    :<|> handleHome modelVar
+    :<|> pure HomeData
 
 handleGetInModel :: (Model -> a) -> TVar Model -> Handler a
 handleGetInModel f modelVar = liftIO (f <$> readTVarIO modelVar)
 
 handleUsersVg :: TVar Model -> Handler [UsersVg]
-handleUsersVg modelVar = do
-    stats <- handleGetInModel (M.toList . _mUserStats) modelVar
-    let fmt (u, us) = UsersVg u (_usWins us) (_usLoses us) (_usTies us)
-    return $ map fmt stats
+handleUsersVg modelVar =
+    let fmt (u, UserStats w l t g tm) = UsersVg u w l t g tm (tm / fromIntegral g)
+    in map fmt <$> handleGetInModel (M.toList . _mUserStats) modelVar
 
 handleGamesVg :: TVar Model -> Handler [GamesVg]
-handleGamesVg modelVar = do
-    ngames <- handleGetInModel (M.toList . _mNbGames) modelVar
-    return $ map (\((ur, uy), n) -> GamesVg ur uy n) ngames
-
-handleTimeVg :: TVar Model -> Handler [TimeVg]
-handleTimeVg modelVar = do
-    stats <- handleGetInModel (M.toList . _mUserStats) modelVar
-    let fmt (u, us) =   let t = _usTime us
-                            g = _usGames us
-                        in TimeVg u t g (t / fromIntegral g)
-    return $ map fmt stats
+handleGamesVg modelVar = 
+    let fmt ((ur, uy), n) = GamesVg ur uy n
+    in map fmt <$> handleGetInModel (M.toList . _mNbGames) modelVar
 
 handleClear :: TVar Model -> Handler String
 handleClear modelVar = liftIO (clearAll modelVar) >> return "done"
-
-handleHome :: TVar Model -> Handler HomeData
-handleHome modelVar = do
-    m <- liftIO $ readTVarIO modelVar
-    pure $ HomeData (_mResults m, _mUserStats m)
 
 httpApp :: TVar Model -> Application
 httpApp modelVar = serve (Proxy @ServerApi) (handleServerApi modelVar)

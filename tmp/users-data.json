@@ -1,0 +1,29 @@
+[
+  {
+    "uGames": 11,
+    "uAvgTime": 0.04318185286088423,
+    "uLoses": 5,
+    "uWins": 6,
+    "uUser": "mc128",
+    "uTime": 0.47500038146972656,
+    "uTies": 0
+  },
+  {
+    "uGames": 11,
+    "uAvgTime": 0.03690912506797097,
+    "uLoses": 1,
+    "uWins": 10,
+    "uUser": "mcts512",
+    "uTime": 0.40600037574768066,
+    "uTies": 0
+  },
+  {
+    "uGames": 10,
+    "uAvgTime": 0.002099943161010742,
+    "uLoses": 10,
+    "uWins": 0,
+    "uUser": "random",
+    "uTime": 0.020999431610107422,
+    "uTies": 0
+  }
+]

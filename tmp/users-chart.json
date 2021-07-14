@@ -1,0 +1,18 @@
+{
+    "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+    "data": {"url": "users-data.json"},
+    "transform": [
+        {"fold": ["uWins", "uLoses", "uTies"], "as": ["result", "value"]},
+        {"calculate": "if(datum.result === 'uWins', 0, if(datum.result === 'uLoses', 1, 2))", "as": "stats"}
+    ],
+    "mark": "bar",
+    "encoding": {
+        "y": {"type": "ordinal", "field": "uUser"},
+        "x": {"type": "quantitative", "field": "value"},
+        "color": {"type": "nominal", "field": "result",
+            "scale": { "domain": [ "uWins", "uLoses", "uTies" ] }
+        },
+        "order": {"field": "stats"}
+    }
+}
+

@@ -33,7 +33,6 @@ makeLenses ''Battle
 instance Eq Battle where
     b1 == b2 = b1^.bUserR == b2^.bUserR && b1^.bUserY == b2^.bUserY
 
--- TODO add timeR/timeY ?
 data Result = Result
     { _rUserR   :: User
     , _rUserY   :: User
