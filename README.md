@@ -4,9 +4,6 @@ Puissance 4 en réseau pour comparer des IA.
 
 [application heroku](http://not-a-connect4.herokuapp.com/)
 
-
-https://github.com/nokomprendo/not-a-connect4/raw/master/tmp/nac4.mp4
-
 ![](tmp/nac4.gif)
 
 ## Protocole réseau
