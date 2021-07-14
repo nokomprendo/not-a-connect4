@@ -2,7 +2,6 @@
 
 module NaC4.Server.ModelSpec (main, spec) where
 
-import Control.Monad.ST
 import Test.Hspec
 
 import NaC4.Server.Model
@@ -14,47 +13,24 @@ main = hspec spec
 spec :: Spec
 spec = do
 
-    describe "userInBattle" $ do
+    describe "userInBattleKey" $ do
 
         it "1" $ do
-            g <- stToIO $ mkGame PlayerR
-            userInBattle "foo" (Battle "foo" "bar" g 13 37 42) `shouldBe` True
+            userInBattleKey "foo" ("foo", "bar") `shouldBe` True
 
         it "2" $ do
-            g <- stToIO $ mkGame PlayerR
-            userInBattle "bar" (Battle "foo" "bar" g 13 37 42) `shouldBe` True
+            userInBattleKey "bar" ("foo","bar") `shouldBe` True
 
         it "3" $ do
-            g <- stToIO $ mkGame PlayerR
-            userInBattle "baz" (Battle "foo" "bar" g 13 37 42) `shouldBe` False
+            userInBattleKey "baz" ("foo","bar") `shouldBe` False
 
     describe "opponent" $ do
 
         it "1" $ do
-            g <- stToIO $ mkGame PlayerR
-            opponent "foo" (Battle "foo" "bar" g 13 37 42) `shouldBe` "bar"
+            opponent "foo" ("foo","bar") `shouldBe` "bar"
 
         it "2" $ do
-            g <- stToIO $ mkGame PlayerR
-            opponent "bar" (Battle "foo" "bar" g 13 37 42) `shouldBe` "foo"
-
-    describe "Eq battle" $ do
-
-        it "1" $ do
-            g <- stToIO $ mkGame PlayerR
-            (Battle "foo" "bar" g 13 37 42 == Battle "foo" "bar" g 13 37 42) `shouldBe` True
-
-        it "2" $ do
-            g <- stToIO $ mkGame PlayerR
-            (Battle "foo" "bar" g 0 37 0 == Battle "foo" "bar" g 13 37 42) `shouldBe` True
-
-        it "3" $ do
-            g <- stToIO $ mkGame PlayerR
-            (Battle "foo" "foo" g 13 0 0 == Battle "foo" "bar" g 13 37 42) `shouldBe` False
-
-        it "4" $ do
-            g <- stToIO $ mkGame PlayerR
-            (Battle "bar" "bar" g 13 37 0 == Battle "foo" "bar" g 13 37 42) `shouldBe` False
+            opponent "bar" ("foo","bar") `shouldBe` "foo"
 
     describe "updateStats" $ do
 

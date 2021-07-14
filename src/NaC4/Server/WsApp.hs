@@ -12,7 +12,6 @@ import Control.Concurrent.STM
 import Control.Exception (finally)
 import Control.Monad (forever)
 import Control.Monad.ST (stToIO)
-import Data.List (find)
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
@@ -57,19 +56,20 @@ run modelVar user conn = forever $ do
         Just (P.PlayMove move) -> do
             time1 <- myGetTime
             m1 <- readTVarIO modelVar
-            let battle = m1^.mBattles & find (userInBattle user)
-            case battle of
-                Nothing -> T.putStrLn $ "invalid playmove from " <> user
-                Just bt0@(Battle userR userY g0 _ _ _) -> do
-                    if (_currentPlayer g0 == G.PlayerR && user /= userR)
+            let bs = m1^.mBattles & M.filterWithKey (\ k _ -> userInBattleKey user k)
+            if M.size bs /= 1
+            then T.putStrLn $ "invalid playmove from " <> user
+            else 
+                let ((userR,userY), bt0@(Battle g0 _ _ _)) = M.elemAt 0 bs
+                in if (_currentPlayer g0 == G.PlayerR && user /= userR)
                         || (_currentPlayer g0 == G.PlayerY && user /= userY)
                     then T.putStrLn $ "not your turn " <> user
                     else do
                         g1 <- stToIO $ G.playJ move g0
                         time2 <- myGetTime
                         atomically $ modifyTVar' modelVar $ \m -> 
-                            m & mBattles %~ map (\bt -> 
-                                if userR==bt^.bUserR && userY==bt^.bUserY
+                            m & mBattles %~ M.mapWithKey (\(ur,uy) bt -> 
+                                if userR==ur && userY==uy
                                 then 
                                     let dt = time1 - bt^.bTimeI
                                     in if _currentPlayer g0 == G.PlayerR
@@ -88,7 +88,7 @@ run modelVar user conn = forever $ do
                                 <> " -> " <> T.pack (show status)
                             sendMsg (EndGame board PlayerR status) connR
                             sendMsg (EndGame board PlayerY status) connY
-                            finishBattle modelVar bt0 board status
+                            finishBattle modelVar (userR,userY) bt0 board status
         _ -> putStrLn "unknown message; skipping"
 
 stop :: TVar Model -> User -> IO ()
@@ -110,7 +110,7 @@ loopRunner modelVar = do
             nbGames = m^.mNbGames
             waiting = m^.mWaiting
         let f (ur,uy) _ = M.member ur clients && M.member uy clients
-                            && not (any (usersInBattle ur uy) (m^.mBattles))
+                            && M.notMember (uy,uy) (m^.mBattles)
                             && (m^.mNbGames) M.! (ur,uy) < maxNbGames
         let activeNbGames = M.filterWithKey f nbGames
         if length (m^.mWaiting) < 2
@@ -139,7 +139,7 @@ loopRunner modelVar = do
             game <- stToIO $ G.mkGame G.PlayerR
             time <- myGetTime
             atomically $ modifyTVar' modelVar
-                (\m -> m & mBattles %~ (Battle userR userY game 0 0 time :))
+                (\m -> m & mBattles %~ M.insert (userR,userY) (Battle game 0 0 time))
             (b, p, s) <- stToIO $ fromGame game
             sendMsg (GenMove b p s) playerR
             loopRunner modelVar
