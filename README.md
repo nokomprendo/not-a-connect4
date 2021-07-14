@@ -30,7 +30,7 @@ c2s: playmove MOVE \n
 s2c: endgame BOARD COLOR STATUS \n
 ```
 
-## Déplyer le serveur sur Heroku
+## Déployer le serveur sur Heroku
 
 - construire l'image Docker :
 

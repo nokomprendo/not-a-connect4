@@ -10,7 +10,8 @@ import NaC4.Protocol as P
 import Control.Concurrent.STM
 import Control.Monad.ST (RealWorld)
 import qualified Data.Aeson as A
-import Data.List
+import Data.List (partition, foldl')
+import qualified Data.Set as S
 import qualified Data.Map.Strict as M
 import GHC.Generics
 import Lens.Micro.Platform
@@ -59,7 +60,8 @@ newUserStats = UserStats 0 0 0 0 0
 
 data Model = Model
     { _mClients     :: M.Map User WS.Connection
-    , _mWaiting     :: [User]       -- TODO Set ?
+    -- , _mWaiting     :: [User]       -- TODO Set ?
+    , _mWaiting     :: S.Set User
     , _mNbGames     :: M.Map (User, User) Int
     , _mBattles     :: [Battle]     -- TODO map ?
     , _mResults     :: [Result]
@@ -68,7 +70,7 @@ data Model = Model
 makeLenses ''Model
 
 newModel :: Model
-newModel = Model M.empty [] M.empty [] [] M.empty
+newModel = Model M.empty S.empty M.empty [] [] M.empty
 
 -------------------------------------------------------------------------------
 -- helpers
@@ -85,7 +87,7 @@ addClient modelVar user conn =  atomically $ do
                 nbGames2 = [((u,user),0) | u<-users]
             writeTVar modelVar $ m 
                 & mClients %~ M.insert user conn
-                & mWaiting %~ (user:)
+                & mWaiting %~ S.insert user
                 & mNbGames %~ M.unionWith max (M.fromList $ nbGames1 ++ nbGames2)
                 & mUserStats %~ M.insertWith (\_new old -> old) user newUserStats
             return True
@@ -96,11 +98,11 @@ delClient modelVar user = atomically $ do
     case partition (userInBattle user) (m^.mBattles) of
         ([], _) -> writeTVar modelVar $ m 
             & mClients %~ M.delete user
-            & mWaiting %~ filter (/=user)
+            & mWaiting %~ S.delete user
         (bs0, bs1) -> do
             writeTVar modelVar $ m 
                 & mClients %~ M.delete user
-                & mWaiting %~ (++ map (opponent user) bs0) 
+                & mWaiting %~ insertList (map (opponent user) bs0) 
                 & mBattles .~ bs1
 
 finishBattle :: TVar Model -> Battle -> P.Board -> G.Status -> IO ()
@@ -109,12 +111,16 @@ finishBattle modelVar battle board status = atomically $ do
         result = Result userR userY board status timeR timeY
     m <- readTVar modelVar
     writeTVar modelVar $ m 
-        & mWaiting %~ (++[userR, userY]) 
+        & mWaiting %~ S.union (S.fromList [userR, userY]) 
         & mBattles %~ filter (/=battle)
         & mResults %~ (result:)
         & mNbGames %~ M.insertWith (+) (userR, userY) 1
         & mUserStats %~ M.adjust (updateStats PlayerR status timeR) userR
         & mUserStats %~ M.adjust (updateStats PlayerY status timeY) userY
+
+-- TODO test
+insertList :: Ord a => [a] -> S.Set a -> S.Set a
+insertList l s = foldl' (flip S.insert) s l
 
 updateStats :: G.Player -> G.Status -> Double -> UserStats -> UserStats
 updateStats PlayerR WinR t us0 = us0 & usWins  +~ 1 & usGames +~ 1 & usTime +~ t
@@ -141,7 +147,7 @@ clearAll :: TVar Model -> IO ()
 clearAll modelVar =
     atomically $ modifyTVar' modelVar $ \m -> 
         m & mBattles .~ []
-            & mWaiting .~ M.keys (m^.mClients)
+            & mWaiting .~ S.fromList (M.keys (m^.mClients))
             & mResults .~ []
             & mUserStats %~ M.filterWithKey (\u _ -> M.member u (m^.mClients))
             & mUserStats %~ M.map (const newUserStats)

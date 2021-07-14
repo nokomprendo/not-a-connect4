@@ -84,7 +84,7 @@ playJ j0 g@(Game _ cp _ ms cs) = do
     let ms1 = if i0/=(nI-1) then ms else U.filter (/=j0) ms
 
     -- update status/current/moves
-    resRow <- checkLine i0 j0 0 1 c0 cs  -- TODO refactor ?
+    resRow <- checkLine i0 j0 0 1 c0 cs
     resCol <- checkLine i0 j0 1 0 c0 cs
     resDiag1 <- checkLine i0 j0 1 1 c0 cs
     resDiag2 <- checkLine i0 j0 1 (-1) c0 cs

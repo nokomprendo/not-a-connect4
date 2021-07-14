@@ -13,10 +13,10 @@ import Control.Exception (finally)
 import Control.Monad (forever)
 import Control.Monad.ST (stToIO)
 import Data.List (find)
+import qualified Data.Set as S
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import Data.Time.Clock (diffTimeToPicoseconds, utctDayTime)
 import Data.Time.Clock.POSIX (getCurrentTime, utcTimeToPOSIXSeconds)
 import Lens.Micro.Platform
 import Network.Wai (Application)
@@ -44,7 +44,6 @@ serverApp modelVar pc = do
             if ok 
             then do
                 sendMsg (Connected $ "hello " <> user) conn
-                -- let app = run modelVar user conn
                 let app = WS.withPingThread conn 30 (return ()) (run modelVar user conn)
                 finally app (stop modelVar user)
             else sendMsg (NotConnected $ user <> " already used") conn
@@ -124,7 +123,8 @@ loopRunner modelVar = do
                 Just ((userR, userY),_) -> 
                     if userR `elem` waiting && userY `elem` waiting 
                     then do
-                        writeTVar modelVar (m & mWaiting %~ filter (`notElem` [userR, userY]))
+                        writeTVar modelVar (m & mWaiting %~ S.delete userR
+                                              & mWaiting %~ S.delete userY)
                         return $ Just (userR, userY, clients M.! userR, clients M.! userY)
                     else return Nothing
                 _ -> return Nothing
