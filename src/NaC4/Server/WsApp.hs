@@ -11,7 +11,7 @@ import qualified NaC4.Server.Params as Params
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.STM
 import Control.Exception (finally)
-import Control.Monad -- TODO (forever, guard, when)
+import Control.Monad (forever, guard)
 import Control.Monad.ST (stToIO)
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M

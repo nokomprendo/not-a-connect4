@@ -1,4 +1,42 @@
-ffmpeg -ss 00:00:20 -i nac4.mkv -t 00:00:20 -c:copy nac4-20-40.mkv
+## Générer des gif animés
 
+```
+ffmpeg -ss 00:00:20 -i nac4.mkv -t 00:00:20 -c:copy nac4-20-40.mkv
 ffmpeg -i nac4-20-40.mkv -r 0.5 -f image2pipe -vcodec ppm - | convert -delay 120 -loop 0 - gif:- | gifsicle -O2 --colors 64 -o nac4.gif
+```
+
+## Changelog
+
+- puissance 4
+- bots
+- serveur http basique
+- serveur json basique
+- connexion basique client-server WS
+- types pour le protocole
+- sérialisation protocole/game
+- le serveur envoie un jeu et fin
+- le serveur stocke les clients dans une map
+- le serveur affiche les clients dans la page web
+- implémentation client
+- enregistre les clients + newgame si 2 clients
+- 2 joueurs clients via server
+- déploiement docker/heroku
+- configuration du bot dans le client
+- api json
+- results + http
+- repetitions des parties + stats
+- ajout des graphiques sur l'appli http
+- chronométrage des genmoves
+- sélection des users (les moins testés d'abord)
+- plot du détail des scores
+- limite max du nb de parties
+- page dynamique
+
+## TODO (ou pas)
+
+- gestion de salons de jeu
+- stockage des resultats en bdd
+- gestion du temps de jeu
+- authentification des users
+
 
