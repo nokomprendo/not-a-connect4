@@ -60,14 +60,11 @@ checkUser user m1 = do
 updateBattle :: User -> User -> Game RealWorld -> Game RealWorld 
              -> Double -> Double -> Model -> Model
 updateBattle userR userY g0 g1 time1 time2 m =
-    m & mBattles %~ M.mapWithKey (\(ur,uy) bt -> 
-        if userR==ur && userY==uy
-        then 
-            let dt = time1 - bt^.bTimeI
-            in if _currentPlayer g0 == G.PlayerR
-                then bt & bGame.~g1 & bTimeI.~time2 & bTimeR+~dt
-                else bt & bGame.~g1 & bTimeI.~time2 & bTimeY+~dt
-        else bt)
+    let f bt = let dt = time1 - bt^.bTimeI
+               in if _currentPlayer g0 == G.PlayerR
+                  then bt & bGame.~g1 & bTimeI.~time2 & bTimeR+~dt
+                  else bt & bGame.~g1 & bTimeI.~time2 & bTimeY+~dt
+    in m & mBattles %~ M.adjust f (userR, userY)
 
 run :: TVar Model -> User -> WS.Connection -> IO ()
 run modelVar user conn = forever $ do
