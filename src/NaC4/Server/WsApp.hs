@@ -6,6 +6,7 @@ module NaC4.Server.WsApp (wsApp, loopRunner) where
 import NaC4.Game as G
 import NaC4.Protocol as P
 import NaC4.Server.Model
+import qualified NaC4.Server.Params as Params
 
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.STM
@@ -21,9 +22,6 @@ import Lens.Micro.Platform
 import Network.Wai (Application)
 import Network.Wai.Handler.WebSockets (websocketsOr)
 import qualified Network.WebSockets as WS
-
-maxNbGames :: Int
-maxNbGames = 10
 
 -------------------------------------------------------------------------------
 -- wsApp
@@ -111,7 +109,7 @@ loopRunner modelVar = do
             waiting = m^.mWaiting
         let f (ur,uy) _ = M.member ur clients && M.member uy clients
                             && M.notMember (uy,uy) (m^.mBattles)
-                            && (m^.mNbGames) M.! (ur,uy) < maxNbGames
+                            && (m^.mNbGames) M.! (ur,uy) < Params.wsMaxNbGames
         let activeNbGames = M.filterWithKey f nbGames
         if length (m^.mWaiting) < 2
         then return Nothing

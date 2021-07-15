@@ -10,7 +10,6 @@ import NaC4.Protocol as P
 import Control.Concurrent.STM
 import Control.Monad.ST (RealWorld)
 import qualified Data.Aeson as A
-import Data.List (foldl')
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
 import GHC.Generics
@@ -93,8 +92,8 @@ delClient :: TVar Model -> User -> IO ()
 delClient modelVar user = atomically $ do
     m <- readTVar modelVar
     let (bs0, bs1) = M.partitionWithKey (\k _ -> userInBattleKey user k) (m^.mBattles)
-        insertOpponents m0 s0 = 
-            M.foldlWithKey' (\si k _ -> S.insert (opponent user k) si) s0 m0
+        insertOpponents = 
+            flip $ M.foldlWithKey' (\si k _ -> S.insert (opponent user k) si)
     if null bs0
     then writeTVar modelVar $ m & mClients %~ M.delete user
                                 & mWaiting %~ S.delete user
@@ -113,12 +112,10 @@ finishBattle :: TVar Model -> BattleKey -> Battle -> P.Board -> G.Status -> IO (
 finishBattle modelVar b@(userR,userY) bt board status = atomically $ do
     m <- readTVar modelVar
     let (Battle _ timeR timeY _) = bt
-        result = Result userR userY board status timeR timeY
-        insertUsers l s = foldl' (flip S.insert) s l
     writeTVar modelVar $ m 
-        & mWaiting %~ insertUsers [userR, userY]
+        & mWaiting %~ flip (foldr S.insert) [userR, userY]
         & mBattles %~ M.delete b
-        & mResults %~ (result:)
+        & mResults %~ (Result userR userY board status timeR timeY :)
         & mNbGames %~ M.insertWith (+) (userR, userY) 1
         & mUserStats %~ M.adjust (updateStats PlayerR status timeR) userR
         & mUserStats %~ M.adjust (updateStats PlayerY status timeY) userY
@@ -132,16 +129,14 @@ updateStats PlayerY WinY t us0 = us0 & usWins  +~ 1 & usGames +~ 1 & usTime +~ t
 updateStats PlayerY Tie  t us0 = us0 & usTies  +~ 1 & usGames +~ 1 & usTime +~ t
 updateStats _ _ _ us0 = us0
 
--- TODO refactor ?
 clearAll :: TVar Model -> IO ()
 clearAll modelVar =
     atomically $ modifyTVar' modelVar $ \m -> 
         let cs = m^.mClients
+            users = M.keys cs
         in m & mBattles .~ mempty
-             & mWaiting .~ S.fromList (M.keys cs)
+             & mWaiting .~ S.fromList users
              & mResults .~ []
-             & mUserStats %~ M.filterWithKey (\u _ -> M.member u cs)
-             & mUserStats %~ M.map (const newUserStats)
-             & mNbGames %~ M.filterWithKey (\(ur,uy) _ -> M.member ur cs && M.member uy cs)
-             & mNbGames %~ M.map (const 0)
+             & mUserStats .~ M.map (const newUserStats) cs
+             & mNbGames .~ M.fromList [((ur,uy), 0) | ur<-users, uy<-users, ur/=uy]
 

@@ -8,14 +8,13 @@
 
 module NaC4.Server.View where
 
+import qualified NaC4.Server.Params as Params
+
 import qualified Data.Aeson as A
 import qualified Data.Text as T
 import GHC.Generics
 import Lucid
 import Text.RawString.QQ
-
-nbResults :: Int
-nbResults = 20
 
 -------------------------------------------------------------------------------
 -- HomeData
@@ -53,7 +52,7 @@ instance ToHtml HomeData where
             h2_ "Users"
             table_ [id_ "idUsers"] mempty
 
-            h2_ $ toHtml $ T.pack (show nbResults) <> " last results"
+            h2_ $ toHtml $ T.pack (show Params.viewNbResults) <> " last results"
             table_ [id_ "idResults"] mempty
 
             h2_ "Links"
@@ -119,7 +118,7 @@ updateScript =
             idResults.textContent = "";
             const fields = ["_rUserR","_rUserY","_rStatus","_rBoard","_rTimeR","_rTimeY"];
             add_ths(idResults, fields);
-            const nbRes = |] <> T.pack (show nbResults) <> [r|
+            const nbRes = |] <> T.pack (show Params.viewNbResults) <> [r|
             jsonData.slice(0,nbRes).map(result => add_tds(idResults, result, fields));
         })
 

@@ -41,7 +41,8 @@ handleGetInModel f modelVar = liftIO (f <$> readTVarIO modelVar)
 
 handleUsersVg :: TVar Model -> Handler [UsersVg]
 handleUsersVg modelVar =
-    let fmt (u, UserStats w l t g tm) = UsersVg u w l t g tm (tm / fromIntegral g)
+    let safeDiv n d = if d==0 then 0 else n / fromIntegral d
+        fmt (u, UserStats w l t g tm) = UsersVg u w l t g tm (safeDiv tm g)
     in map fmt <$> handleGetInModel (M.toList . _mUserStats) modelVar
 
 handleGamesVg :: TVar Model -> Handler [GamesVg]
