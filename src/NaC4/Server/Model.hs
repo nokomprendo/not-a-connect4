@@ -27,9 +27,7 @@ data Battle = Battle
     , _bTimeI       :: Double
     }
 makeLenses ''Battle
-
 type BattleKey = (User, User)
-type BattleMap = M.Map BattleKey Battle
 
 data Result = Result
     { _rUserR   :: User
@@ -58,8 +56,8 @@ newUserStats = UserStats 0 0 0 0 0
 data Model = Model
     { _mClients     :: M.Map User WS.Connection
     , _mWaiting     :: S.Set User
-    , _mNbGames     :: M.Map (User, User) Int
-    , _mBattles     :: M.Map (User, User) Battle
+    , _mNbGames     :: M.Map BattleKey Int
+    , _mBattles     :: M.Map BattleKey Battle
     , _mResults     :: [Result]
     , _mUserStats   :: M.Map User UserStats
     }

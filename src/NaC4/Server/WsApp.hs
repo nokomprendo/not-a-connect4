@@ -1,7 +1,7 @@
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module NaC4.Server.WsApp (wsApp, loopRunner) where
+module NaC4.Server.WsApp (wsApp, startBattles) where
 
 import NaC4.Game as G
 import NaC4.Protocol as P
@@ -11,7 +11,7 @@ import qualified NaC4.Server.Params as Params
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.STM
 import Control.Exception (finally)
-import Control.Monad (forever)
+import Control.Monad -- TODO (forever, guard, when)
 import Control.Monad.ST (stToIO)
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
@@ -41,8 +41,9 @@ serverApp modelVar pc = do
             if ok 
             then do
                 sendMsg (Connected $ "hello " <> user) conn
-                let app = WS.withPingThread conn 30 (return ()) (run modelVar user conn)
-                finally app (stop modelVar user)
+                finally 
+                    (WS.withPingThread conn 30 (return ()) (run modelVar user conn))
+                    (stop modelVar user)
             else sendMsg (NotConnected $ user <> " already used") conn
         _ -> T.putStrLn "unknown query"
 
@@ -98,49 +99,52 @@ stop modelVar user = do
 -- runner
 -------------------------------------------------------------------------------
 
--- TODO refactor
-loopRunner :: TVar Model -> IO ()
-loopRunner modelVar = do
+computeFirstGame :: Model -> Maybe BattleKey
+computeFirstGame m = 
+    let fGames = M.filterWithKey $ \(ur,uy) _ ->
+                    M.member ur (m^.mClients) 
+                    && M.member uy (m^.mClients)
+                    && M.notMember (uy,uy) (m^.mBattles)
+                    && (m^.mNbGames) M.! (ur,uy) < Params.wsMaxNbGames
+        fAcc Nothing ki ai = Just (ki,ai)
+        fAcc (Just (k0,a0)) ki ai = if ai<a0 then Just (ki,ai) else Just (k0,a0)
+    in fst <$> M.foldlWithKey' fAcc Nothing (fGames $ m^.mNbGames)
 
+startBattles :: TVar Model -> IO ()
+startBattles modelVar = do
+    -- look for possible new game
     res <- atomically $ do
         m <- readTVar modelVar
         let clients = m^.mClients
-            nbGames = m^.mNbGames
             waiting = m^.mWaiting
-        let f (ur,uy) _ = M.member ur clients && M.member uy clients
-                            && M.notMember (uy,uy) (m^.mBattles)
-                            && (m^.mNbGames) M.! (ur,uy) < Params.wsMaxNbGames
-        let activeNbGames = M.filterWithKey f nbGames
-        if length (m^.mWaiting) < 2
-        then return Nothing
-        else do
-            let fusers Nothing ki ai = Just (ki,ai)
-                fusers (Just (k0,a0)) ki ai = if ai<a0 then Just (ki,ai) else Just (k0,a0)
-            let usersRYM = M.foldlWithKey' fusers Nothing activeNbGames
-            case usersRYM of
-                Just ((userR, userY),_) -> 
-                    if userR `elem` waiting && userY `elem` waiting 
-                    then do
-                        writeTVar modelVar (m & mWaiting %~ S.delete userR
-                                              & mWaiting %~ S.delete userY)
-                        return $ Just (userR, userY, clients M.! userR, clients M.! userY)
-                    else return Nothing
-                _ -> return Nothing
-
+        let res0 = do
+                guard (length waiting >= 2)
+                (userR,userY) <- computeFirstGame m
+                guard (userR `elem` waiting && userY `elem` waiting)
+                Just (userR, userY, clients M.! userR, clients M.! userY)
+        case res0 of
+            Nothing -> return Nothing
+            Just (userR, userY, _, _) -> do
+                writeTVar modelVar (m & mWaiting %~ S.delete userR 
+                                      & mWaiting %~ S.delete userY)
+                return res0
+    -- handle result
     case res of
         Nothing -> do
+            -- no new game
             threadDelay 1_000_000
-            loopRunner modelVar
-        Just (userR, userY, playerR, playerY) -> do
-            sendMsg (NewGame userR userY) playerR
-            sendMsg (NewGame userR userY) playerY
+            startBattles modelVar
+        Just (userR, userY, clientR, clientY) -> do
+            -- start new game
+            sendMsg (NewGame userR userY) clientR
+            sendMsg (NewGame userR userY) clientY
             game <- stToIO $ G.mkGame G.PlayerR
             time <- myGetTime
             atomically $ modifyTVar' modelVar
                 (\m -> m & mBattles %~ M.insert (userR,userY) (Battle game 0 0 time))
             (b, p, s) <- stToIO $ fromGame game
-            sendMsg (GenMove b p s) playerR
-            loopRunner modelVar
+            sendMsg (GenMove b p s) clientR
+            startBattles modelVar
 
 -------------------------------------------------------------------------------
 -- helpers
