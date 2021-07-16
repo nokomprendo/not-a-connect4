@@ -47,6 +47,25 @@ serverApp modelVar pc = do
             else sendMsg (NotConnected $ user <> " already used") conn
         _ -> T.putStrLn "unknown query"
 
+-------------------------------------------------------------------------------
+-- helpers
+-------------------------------------------------------------------------------
+
+recvMsg :: WS.Connection -> IO (Maybe MsgToServer)
+recvMsg conn = parseMsgToServer . WS.fromLazyByteString <$> WS.receiveData conn
+
+sendMsg :: MsgToClient -> WS.Connection -> IO ()
+sendMsg msg conn = WS.sendTextData conn (fmtMsgToClient msg)
+
+myGetTime :: IO Double
+myGetTime = 
+    let itod = fromIntegral :: Int -> Double
+    in (0.001*) . itod . round <$> ((1000*) . utcTimeToPOSIXSeconds <$> getCurrentTime)
+
+-------------------------------------------------------------------------------
+-- handle ws messages
+-------------------------------------------------------------------------------
+
 checkUser :: User -> Model -> Maybe (User, User, Battle, Game RealWorld)
 checkUser user m1 = do
     let bs = m1^.mBattles & M.filterWithKey (\ k _ -> userInBattleKey user k)
@@ -101,7 +120,7 @@ stop modelVar user = do
     T.putStrLn $ "bye " <> user
 
 -------------------------------------------------------------------------------
--- runner
+-- start battles
 -------------------------------------------------------------------------------
 
 computeFirstGame :: Model -> Maybe BattleKey
@@ -150,19 +169,4 @@ startBattles modelVar = do
             (b, p, s) <- stToIO $ fromGame game
             sendMsg (GenMove b p s) clientR
             startBattles modelVar
-
--------------------------------------------------------------------------------
--- helpers
--------------------------------------------------------------------------------
-
-recvMsg :: WS.Connection -> IO (Maybe MsgToServer)
-recvMsg conn = parseMsgToServer . WS.fromLazyByteString <$> WS.receiveData conn
-
-sendMsg :: MsgToClient -> WS.Connection -> IO ()
-sendMsg msg conn = WS.sendTextData conn (fmtMsgToClient msg)
-
-myGetTime :: IO Double
-myGetTime = 
-    let itod = fromIntegral :: Int -> Double
-    in (0.001*) . itod . round <$> ((1000*) . utcTimeToPOSIXSeconds <$> getCurrentTime)
 
