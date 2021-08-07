@@ -105,7 +105,10 @@ run modelVar user conn = forever $ do
                                 then connR else connY
                     (board, player, status) <- stToIO $ P.fromGame g1
                     if G.isRunning g1
-                    then sendMsg (GenMove board player status) conn1
+                    then 
+                        let pTime = if player==PlayerR then bt^.bTimeR else bt^.bTimeY
+                            time = Params.wsBattleTime - pTime
+                        in sendMsg (GenMove board player status time) conn1
                     else do
                         T.putStrLn $ userR <> " vs " <> userY 
                             <> " -> " <> T.pack (show status)
@@ -167,6 +170,6 @@ startBattles modelVar = do
             atomically $ modifyTVar' modelVar
                 (\m -> m & mBattles %~ M.insert (userR,userY) (Battle game 0 0 time))
             (b, p, s) <- stToIO $ fromGame game
-            sendMsg (GenMove b p s) clientR
+            sendMsg (GenMove b p s Params.wsBattleTime) clientR
             startBattles modelVar
 

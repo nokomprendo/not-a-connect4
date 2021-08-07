@@ -18,7 +18,15 @@ import System.Random.MWC
 ----------------------------------------------------------------------
 
 class Bot s b where
-    genmove :: b -> Game s -> ST s Int
+    genmove :: b -> Double -> Game s -> ST s Int
+
+playoutBots :: (Bot s b1, Bot s b2) => b1 -> b2 -> Game s -> ST s Status
+playoutBots botR botY g0 
+    | isRunning g0 =
+        let moveFunc = if _currentPlayer g0 == PlayerR then genmove botR 1
+                                                       else genmove botY 1
+        in moveFunc g0 >>= (`playK` g0) >>= playoutBots botR botY 
+    | otherwise = return (_status g0) 
 
 ----------------------------------------------------------------------
 -- Bot Zero
@@ -27,15 +35,7 @@ class Bot s b where
 data BotZero = BotZero
 
 instance Bot s BotZero where
-    genmove _bot _game = return 0
-
-playoutBots :: (Bot s b1, Bot s b2) => b1 -> b2 -> Game s -> ST s Status
-playoutBots botR botY g0 
-    | isRunning g0 =
-        let moveFunc = if _currentPlayer g0 == PlayerR then genmove botR
-                                                       else genmove botY 
-        in moveFunc g0 >>= (`playK` g0) >>= playoutBots botR botY 
-    | otherwise = return (_status g0) 
+    genmove _bot _time _game = return 0
 
 ----------------------------------------------------------------------
 -- BotRandom
@@ -44,7 +44,7 @@ playoutBots botR botY g0
 newtype BotRandom s = BotRandom { randomGen :: GenST s }
 
 instance Bot s (BotRandom s) where
-    genmove (BotRandom gen) = randomMove gen
+    genmove (BotRandom gen) _ = randomMove gen
 
 {-# INLINE randomMove #-}
 randomMove :: GenST s -> Game s -> ST s Int
@@ -60,7 +60,7 @@ data BotMc s = BotMc
     }
 
 instance Bot s (BotMc s) where
-    genmove (BotMc nsims gen) game =
+    genmove (BotMc nsims gen) _time game =
 
         let aux ki k s = if ki == nMovesGame game then return k else do
                             si <- evalMove game gen nsims ki
@@ -101,7 +101,7 @@ data BotMcts s = BotMcts
     }
 
 instance Bot s (BotMcts s) where
-    genmove (BotMcts niters gen) game = do
+    genmove (BotMcts niters gen) _time game = do
         root <- mkRoot game 
         replicateM_ niters $ do
             leaf <- selectAndExpand root

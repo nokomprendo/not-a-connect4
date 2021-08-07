@@ -53,7 +53,7 @@ usage = do
 -- bot
 -------------------------------------------------------------------------------
 
-type BotFunc = G.Game RealWorld -> ST RealWorld Int
+type BotFunc = Double -> G.Game RealWorld -> ST RealWorld Int
 
 mkBotFunc :: [String] -> IO (Maybe BotFunc)
 mkBotFunc ["random"] = Just . genmove . BotRandom <$> createSystemRandom
@@ -89,13 +89,13 @@ run botFunc conn = do
     msgToClient <- recvMsg conn
     case msgToClient of
         Just (NewGame pr py) -> T.putStrLn $ "newgame: " <> pr <> " " <> py
-        Just (GenMove b p s) -> do
+        Just (GenMove b p s t) -> do
             gameM <- stToIO (toGame b p s)
             case gameM of
                 Nothing -> T.putStrLn "genmove: error"
                 Just game -> do
                     T.putStrLn $ "genmove: " <> b <> " " <> fmtPlayer p
-                    k <- stToIO $ botFunc game
+                    k <- stToIO $ botFunc t game
                     let j = G._moves game U.! k
                     T.putStrLn $ "playmove: " <> T.pack (show j)
                     sendMsg (PlayMove j) conn

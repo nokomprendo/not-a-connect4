@@ -43,8 +43,8 @@ spec = do
             parseMsgToClient "newgame foo bar baz \n" `shouldBe` Nothing
 
         it "genmove 1" $ do
-            parseMsgToClient "genmove board R Tie \n" `shouldBe` Just (GenMove "board" PlayerR Tie)
-            parseMsgToClient "genmove board Y WinR \n" `shouldBe` Just (GenMove "board" PlayerY WinR)
+            parseMsgToClient "genmove board R Tie 0.5 \n" `shouldBe` Just (GenMove "board" PlayerR Tie 0.5)
+            parseMsgToClient "genmove board Y WinR 2 \n" `shouldBe` Just (GenMove "board" PlayerY WinR 2)
             parseMsgToClient "genmove board Z Tie \n" `shouldBe` Nothing
             parseMsgToClient "genmove board Y foo \n" `shouldBe` Nothing
 
@@ -77,8 +77,10 @@ spec = do
             fmtMsgToClient (NewGame "foo" "bar")`shouldBe` "newgame foo bar \n"
 
         it "genmove 1" $ do
-            fmtMsgToClient (GenMove "board" PlayerR Tie)`shouldBe` "genmove board R Tie \n"
-            fmtMsgToClient (GenMove "board" PlayerY WinR)`shouldBe` "genmove board Y WinR \n"
+            fmtMsgToClient (GenMove "board" PlayerR Tie 3)`shouldBe` "genmove board R Tie 3.0 \n"
+            fmtMsgToClient (GenMove "board" PlayerY WinR 4)`shouldBe` "genmove board Y WinR 4.0 \n"
+            fmtMsgToClient (GenMove "board" PlayerY WinR 4.2)`shouldBe` "genmove board Y WinR 4.2 \n"
+            fmtMsgToClient (GenMove "board" PlayerY WinR 1.337)`shouldBe` "genmove board Y WinR 1.3 \n"
 
         it "endgame 1" $ do
             fmtMsgToClient (EndGame "board" PlayerR WinR)`shouldBe` "endgame board R WinR \n"

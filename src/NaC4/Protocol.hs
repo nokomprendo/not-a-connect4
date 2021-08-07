@@ -8,6 +8,7 @@ import Control.Monad.ST
 import qualified Data.Massiv.Array as A
 import qualified Data.Text as T
 import qualified Data.Vector.Unboxed as U
+import Text.Printf (printf)
 import Text.Read (readMaybe)
 
 -------------------------------------------------------------------------------
@@ -27,7 +28,7 @@ data MsgToClient
     = Connected T.Text
     | NotConnected T.Text
     | NewGame User User
-    | GenMove Board G.Player G.Status
+    | GenMove Board G.Player G.Status Double
     | EndGame Board G.Player G.Status
     deriving (Eq, Show)
 
@@ -46,7 +47,8 @@ parseMsgToClient input = case T.words input of
     ("connected":xs) -> Just $ Connected (T.unwords xs)
     ("not-connected":xs) -> Just $ NotConnected (T.unwords xs)
     ["newgame", pr, py] -> Just $ NewGame pr py 
-    ["genmove", b, p, s] -> GenMove b <$> parsePlayer p <*> parseStatus s
+    ["genmove", b, p, s, t] -> 
+        GenMove b <$> parsePlayer p <*> parseStatus s <*> readMaybe (T.unpack t)
     ["endgame", b, p, s] -> EndGame b <$> parsePlayer p <*> parseStatus s
     _ -> Nothing
 
@@ -75,7 +77,8 @@ fmtMsgToClient :: MsgToClient -> T.Text
 fmtMsgToClient (Connected msg) = fmtMsg ["connected", msg]
 fmtMsgToClient (NotConnected msg) = fmtMsg ["not-connected", msg]
 fmtMsgToClient (NewGame pr py) = fmtMsg ["newgame", pr, py]
-fmtMsgToClient (GenMove b p s) = fmtMsg ["genmove", b, fmtPlayer p, fmtStatus s]
+fmtMsgToClient (GenMove b p s t) = 
+    fmtMsg ["genmove", b, fmtPlayer p, fmtStatus s, fmtTime t]
 fmtMsgToClient (EndGame b p s) = fmtMsg ["endgame", b, fmtPlayer p, fmtStatus s]
 
 fmtPlayer :: G.Player -> T.Text
@@ -88,6 +91,9 @@ fmtStatus G.WinY = "WinY"
 fmtStatus G.Tie = "Tie"
 fmtStatus G.PlayR = "PlayR"
 fmtStatus G.PlayY = "PlayY"
+
+fmtTime :: Double -> T.Text
+fmtTime = T.pack . printf "%.1f"
 
 fmtMsg :: [T.Text] -> T.Text
 fmtMsg xs = T.unwords (xs ++ ["\n"])

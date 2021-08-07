@@ -6,6 +6,13 @@ A client-server application to compare AI playing Connect4.
 
 ![](tmp/nac4.gif)
 
+## TODO
+
+BotMcTime
+BotMcHalfTime
+BotMctsTime
+BotMctsHalfTime
+
 ## Network protocol
 
 - using websockets
@@ -14,10 +21,12 @@ A client-server application to compare AI playing Connect4.
 - BOARD: (. | R | Y)x42                         ; line0, line1...
 - PLAYER: R | Y
 - MOVE: 0-6                                     ; column to play
-- STATUS : WinR | WinY | Tie | PlayR | PlayY
+- STATUS: WinR | WinY | Tie | PlayR | PlayY
 - invalid move -> cancel current game then terminate
 - disconnection -> cancel current game then terminate
 - s2c/c2s: server-to-client/client-to-server
+- time: total remaining time for the current player (start a battle with 120.0s)
+- when timeout -> send endgame to both players + disconnect failing player
 
 ```
 c2s: connect <username> \n
@@ -25,7 +34,7 @@ s2c: connected [welcome message] \n
 s2c: not-connected [error message] \n
 
 s2c: newgame <user> <user> \n
-s2c: genmove BOARD COLOR \n             ; color of the current player
+s2c: genmove BOARD COLOR <time> \n             ; color of the current player
 c2s: playmove MOVE \n
 s2c: endgame BOARD COLOR STATUS \n
 ```
