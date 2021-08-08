@@ -7,5 +7,6 @@ wsMaxNbGames :: Int
 wsMaxNbGames = 10
 
 wsBattleTime :: Double
-wsBattleTime = 42.0
+wsBattleTime = 21.0
+-- wsBattleTime = 42.0 -- TODO
 

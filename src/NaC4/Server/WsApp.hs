@@ -1,7 +1,7 @@
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module NaC4.Server.WsApp (wsApp, startBattles) where
+module NaC4.Server.WsApp (wsApp, wsIdleApp) where
 
 import NaC4.Game as G
 import NaC4.Protocol as P
@@ -11,10 +11,11 @@ import qualified NaC4.Server.Params as Params
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.STM
 import Control.Exception (finally)
-import Control.Monad (forever, guard)
+import Control.Monad (forever, guard, when)
 import Control.Monad.ST (stToIO, RealWorld)
-import qualified Data.Set as S
+import Data.Maybe (isJust)
 import qualified Data.Map.Strict as M
+import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Time.Clock.POSIX (getCurrentTime, utcTimeToPOSIXSeconds)
@@ -77,12 +78,12 @@ checkUser user m1 = do
     return (userR, userY, bt, g0)
 
 updateBattle :: User -> User -> Game RealWorld -> Game RealWorld 
-             -> Double -> Double -> Model -> Model
-updateBattle userR userY g0 g1 time1 time2 m =
+             -> P.Board -> Double -> Double -> Model -> Model
+updateBattle userR userY g0 g1 b1 time1 time2 m =
     let f bt = let dt = time1 - bt^.bTimeI
                in if _currentPlayer g0 == G.PlayerR
-                  then bt & bGame.~g1 & bTimeI.~time2 & bTimeR+~dt
-                  else bt & bGame.~g1 & bTimeI.~time2 & bTimeY+~dt
+                  then bt & bGame.~g1 & bBoard.~b1 & bTimeI.~time2 & bTimeR+~dt
+                  else bt & bGame.~g1 & bBoard.~b1 & bTimeI.~time2 & bTimeY+~dt
     in m & mBattles %~ M.adjust f (userR, userY)
 
 run :: TVar Model -> User -> WS.Connection -> IO ()
@@ -91,36 +92,39 @@ run modelVar user conn = forever $ do
     case msg of
         Just (P.PlayMove move) -> do
             time1 <- myGetTime
-            -- TODO
+
+            -- TODO refactor (atomic STM)
             m1 <- readTVarIO modelVar
             case checkUser user m1 of
-                Nothing -> T.putStrLn $ "invalid playmove from " <> user
+                Nothing -> T.putStrLn $ "skipping playmove from " <> user
                 Just (userR, userY, bt, g0) -> do
+                    -- TODO check move
                     g1 <- stToIO $ G.playJ move g0
+                    (board, player, status) <- stToIO $ P.fromGame g1
                     time2 <- myGetTime
                     atomically $ modifyTVar' modelVar 
-                        (updateBattle userR userY g0 g1 time1 time2)
+                        (updateBattle userR userY g0 g1 board time1 time2)
                     let connR = (m1^.mClients) M.! userR
                         connY = (m1^.mClients) M.! userY
                         conn1 = if G._currentPlayer g1 == G.PlayerR
                                 then connR else connY
-                    (board, player, status) <- stToIO $ P.fromGame g1
                     if G.isRunning g1
                     then 
                         let pTime = if player==PlayerR then bt^.bTimeR else bt^.bTimeY
                             time = Params.wsBattleTime - pTime
                         in sendMsg (GenMove board player status time) conn1
                     else do
+                        atomically $ finishBattle modelVar (userR,userY) bt board status
                         T.putStrLn $ userR <> " vs " <> userY 
                             <> " -> " <> T.pack (show status)
                         sendMsg (EndGame board PlayerR status) connR
                         sendMsg (EndGame board PlayerY status) connY
-                        atomically $ finishBattle modelVar (userR,userY) bt board status
+
         _ -> putStrLn "unknown message"
 
 stop :: TVar Model -> User -> IO ()
 stop modelVar user = do
-    atomically $ delClient modelVar user
+    atomically $ deleteClient modelVar user
     T.putStrLn $ "bye " <> user
 
 -------------------------------------------------------------------------------
@@ -138,41 +142,59 @@ computeFirstGame m =
         fAcc (Just (k0,a0)) ki ai = if ai<a0 then Just (ki,ai) else Just (k0,a0)
     in fst <$> M.foldlWithKey' fAcc Nothing (fGames $ m^.mNbGames)
 
-startBattles :: TVar Model -> IO ()
-startBattles modelVar = do
-    -- timeout
-    
-    -- look for possible new game
+wsIdleApp :: TVar Model -> IO ()
+wsIdleApp modelVar = forever $ do
+    deleteTimeout modelVar
+    startOneGame modelVar
+    threadDelay 100_000
+
+-- TODO timeout: report in stats and to client ?
+
+deleteTimeout :: TVar Model -> IO ()
+deleteTimeout modelVar = do
+    time1 <- myGetTime
+    (battles, model) <- atomically $ do
+        model <- readTVar modelVar
+        let battles = findTimeouts time1 model
+        let finish (bk, bt, st) = finishBattle modelVar bk bt (bt^.bBoard) st
+        mapM_ finish battles
+        return (battles, model)
+    let finishWs ((userR, userY), bt, status) = do
+            T.putStrLn $ userR <> " vs " <> userY <> " -> " 
+                <> T.pack (show status) <> " (timeout)"
+            let connR = (model^.mClients) M.! userR
+                connY = (model^.mClients) M.! userY
+                board = bt^.bBoard
+            sendMsg (EndGame board PlayerR status) connR
+            sendMsg (EndGame board PlayerY status) connY
+    mapM_ finishWs battles
+
+startOneGame :: TVar Model -> IO ()
+startOneGame modelVar = do
     res <- atomically $ do
         m <- readTVar modelVar
         let clients = m^.mClients
             waiting = m^.mWaiting
-        let res0 = do
+        let maybeBattle = do
                 guard (length waiting >= 2)
                 (userR,userY) <- computeFirstGame m
                 guard (userR `elem` waiting && userY `elem` waiting)
                 Just (userR, userY, clients M.! userR, clients M.! userY)
-        case res0 of
-            Nothing -> return Nothing
-            Just (userR, userY, _, _) -> do
-                writeTVar modelVar (m & mWaiting %~ S.delete userR 
-                                      & mWaiting %~ S.delete userY)
-                return res0
-    -- handle result
+        when (isJust maybeBattle) $
+            let Just (userR, userY, _, _) = maybeBattle
+            in writeTVar modelVar (m & mWaiting %~ S.delete userR 
+                                     & mWaiting %~ S.delete userY)
+        return maybeBattle
     case res of
-        Nothing -> do
-            -- no new game
-            threadDelay 100_000
-            startBattles modelVar
         Just (userR, userY, clientR, clientY) -> do
-            -- start new game
             sendMsg (NewGame userR userY) clientR
             sendMsg (NewGame userR userY) clientY
             game <- stToIO $ G.mkGame G.PlayerR
+            (board, _, _) <- stToIO $ fromGame game
             time <- myGetTime
             atomically $ modifyTVar' modelVar
-                (\m -> m & mBattles %~ M.insert (userR,userY) (Battle game 0 0 time))
+                (\m -> m & mBattles %~ M.insert (userR,userY) (Battle game board 0 0 time))
             (b, p, s) <- stToIO $ fromGame game
             sendMsg (GenMove b p s Params.wsBattleTime) clientR
-            startBattles modelVar
+        Nothing -> return ()
 

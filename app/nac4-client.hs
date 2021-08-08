@@ -84,6 +84,8 @@ clientApp botFunc user conn = do
         Just (NotConnected msg) -> die ("not-connected: " <> T.unpack msg)
         _ -> die "connection failed"
 
+-- TODO run genmove in a thread and kill it if recv endgame
+
 run :: BotFunc -> WS.ClientApp ()
 run botFunc conn = do
     msgToClient <- recvMsg conn

@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE Strict #-}
 
 module NaC4.Game where
 
@@ -31,10 +32,10 @@ instance ToJSON Status
 type Board s = MArray s B Ix2 Cell
 
 data Game s = Game
-    { _status :: !Status
-    , _currentPlayer :: !Player
-    , _firstPlayer :: !Player
-    , _moves :: !(U.Vector Int)
+    { _status :: Status
+    , _currentPlayer :: Player
+    , _firstPlayer :: Player
+    , _moves :: (U.Vector Int)
     , _cells :: Board s
     }
 

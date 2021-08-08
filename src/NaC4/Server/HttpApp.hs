@@ -10,7 +10,7 @@ import NaC4.Server.Model
 import NaC4.Server.View
 
 import Control.Concurrent.STM
-import Control.Monad.IO.Class
+import Control.Monad.IO.Class (liftIO)
 import qualified Data.Map.Strict as M
 import Servant
 import Servant.HTML.Lucid

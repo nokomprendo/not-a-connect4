@@ -1,6 +1,7 @@
-{-# Language FlexibleContexts #-}
-{-# Language FlexibleInstances #-}
-{-# Language MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE Strict #-}
 
 module NaC4.Client.Bot where
 
@@ -55,7 +56,7 @@ randomMove gen game = uniformR (0, nMovesGame game - 1) gen
 ----------------------------------------------------------------------
 
 data BotMc s = BotMc
-    { mcNsims :: !Int
+    { mcNsims :: Int
     , mcGen :: GenST s
     }
 

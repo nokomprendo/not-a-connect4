@@ -14,7 +14,7 @@ main = do
     port <- read . fromMaybe "3000" <$> lookupEnv "PORT"
     putStrLn $ "listening port " ++ show port ++ "..."
     modelVar <- newTVarIO newModel
-    _ <- forkIO $ startBattles modelVar
+    _ <- forkIO $ wsIdleApp modelVar
     run port 
         -- $ logStdout 
         $ wsApp modelVar

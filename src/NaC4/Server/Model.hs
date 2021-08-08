@@ -6,6 +6,7 @@ module NaC4.Server.Model where
 
 import NaC4.Game as G
 import NaC4.Protocol as P
+import NaC4.Server.Params
 
 import Control.Concurrent.STM
 import Control.Monad.ST (RealWorld)
@@ -22,6 +23,7 @@ import qualified Network.WebSockets as WS
 
 data Battle = Battle
     { _bGame        :: Game RealWorld
+    , _bBoard       :: P.Board
     , _bTimeR       :: Double
     , _bTimeY       :: Double
     , _bTimeI       :: Double
@@ -86,8 +88,8 @@ addClient modelVar user conn = do
                 & mUserStats %~ M.insertWith (\_new old -> old) user newUserStats
             return True
 
-delClient :: TVar Model -> User -> STM ()
-delClient modelVar user = do
+deleteClient :: TVar Model -> User -> STM ()
+deleteClient modelVar user = do
     m <- readTVar modelVar
     let (bs0, bs1) = M.partitionWithKey (\k _ -> userInBattleKey user k) (m^.mBattles)
         insertOpponents = 
@@ -109,7 +111,7 @@ opponent user (userR, userY) =
 finishBattle :: TVar Model -> BattleKey -> Battle -> P.Board -> G.Status -> STM ()
 finishBattle modelVar b@(userR,userY) bt board status = do
     m <- readTVar modelVar
-    let (Battle _ timeR timeY _) = bt
+    let (Battle _ _ timeR timeY _) = bt
     writeTVar modelVar $ m 
         & mWaiting %~ flip (foldr S.insert) [userR, userY]
         & mBattles %~ M.delete b
@@ -137,4 +139,16 @@ clearAll modelVar =
              & mResults .~ []
              & mUserStats .~ M.map (const newUserStats) cs
              & mNbGames .~ M.fromList [((ur,uy), 0) | ur<-users, uy<-users, ur/=uy]
+
+findTimeouts :: Double -> Model -> [(BattleKey, Battle, Status)]
+findTimeouts time m = M.foldlWithKey' (accTimeout time) [] (m^.mBattles)
+    where 
+        accTimeout t acc bk bt = 
+            let p = _currentPlayer $ _bGame bt
+                (tp, s) = 
+                    if p == PlayerR then (bt^.bTimeR, WinY) else (bt^.bTimeY, WinR)
+                tt = tp + t - bt^.bTimeI
+            in if tt > wsBattleTime 
+                then (bk, bt, s) : acc
+                else acc
 
