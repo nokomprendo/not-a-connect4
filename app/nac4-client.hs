@@ -94,13 +94,15 @@ run botFunc conn = do
             case gameM of
                 Nothing -> T.putStrLn "genmove: error"
                 Just game -> do
-                    T.putStrLn $ "genmove: " <> b <> " " <> fmtPlayer p
+                    T.putStrLn $ "genmove: " <> b <> " " <> fmtPlayer p <> " "
+                        <> fmtTime t
                     k <- stToIO $ botFunc t game
                     let j = G._moves game U.! k
                     T.putStrLn $ "playmove: " <> T.pack (show j)
                     sendMsg (PlayMove j) conn
         Just (EndGame b p s) -> do
-            T.putStrLn $ "endgame: " <> b <> " " <> fmtPlayer p <> " " <> fmtStatus s
+            T.putStrLn $ "endgame: " <> b <> " " <> fmtPlayer p <> " "
+                <> fmtStatus s
             mG <- stToIO (toGame b p s)
             case mG of
                 Nothing -> T.putStrLn "failed to parse game"

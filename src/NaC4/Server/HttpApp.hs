@@ -51,7 +51,7 @@ handleGamesVg modelVar =
     in map fmt <$> handleGetInModel (M.toList . _mNbGames) modelVar
 
 handleClear :: TVar Model -> Handler String
-handleClear modelVar = liftIO (clearAll modelVar) >> return "done"
+handleClear modelVar = liftIO (atomically $ clearAll modelVar) >> return "done"
 
 httpApp :: TVar Model -> Application
 httpApp modelVar = serve (Proxy @ServerApi) (handleServerApi modelVar)

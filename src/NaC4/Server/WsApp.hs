@@ -37,7 +37,7 @@ serverApp modelVar pc = do
     case msgToServer of
         Just (Connect user) -> do
             T.putStrLn $ "hello " <> user
-            ok <- addClient modelVar user conn
+            ok <- atomically $ addClient modelVar user conn
             if ok 
             then do
                 sendMsg (Connected $ "hello " <> user) conn
@@ -91,6 +91,7 @@ run modelVar user conn = forever $ do
     case msg of
         Just (P.PlayMove move) -> do
             time1 <- myGetTime
+            -- TODO
             m1 <- readTVarIO modelVar
             case checkUser user m1 of
                 Nothing -> T.putStrLn $ "invalid playmove from " <> user
@@ -114,12 +115,12 @@ run modelVar user conn = forever $ do
                             <> " -> " <> T.pack (show status)
                         sendMsg (EndGame board PlayerR status) connR
                         sendMsg (EndGame board PlayerY status) connY
-                        finishBattle modelVar (userR,userY) bt board status
+                        atomically $ finishBattle modelVar (userR,userY) bt board status
         _ -> putStrLn "unknown message"
 
 stop :: TVar Model -> User -> IO ()
 stop modelVar user = do
-    delClient modelVar user
+    atomically $ delClient modelVar user
     T.putStrLn $ "bye " <> user
 
 -------------------------------------------------------------------------------
@@ -139,6 +140,8 @@ computeFirstGame m =
 
 startBattles :: TVar Model -> IO ()
 startBattles modelVar = do
+    -- timeout
+    
     -- look for possible new game
     res <- atomically $ do
         m <- readTVar modelVar
@@ -159,7 +162,7 @@ startBattles modelVar = do
     case res of
         Nothing -> do
             -- no new game
-            threadDelay 1_000_000
+            threadDelay 100_000
             startBattles modelVar
         Just (userR, userY, clientR, clientY) -> do
             -- start new game

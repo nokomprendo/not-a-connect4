@@ -9,9 +9,7 @@ A client-server application to compare AI playing Connect4.
 ## TODO
 
 BotMcTime
-BotMcHalfTime
 BotMctsTime
-BotMctsHalfTime
 
 ## Network protocol
 
@@ -25,8 +23,8 @@ BotMctsHalfTime
 - invalid move -> cancel current game then terminate
 - disconnection -> cancel current game then terminate
 - s2c/c2s: server-to-client/client-to-server
-- time: total remaining time for the current player (start a battle with 120.0s)
-- when timeout -> send endgame to both players + disconnect failing player
+- time: remaining time for the current player (begins with 42.0s per player per battle)
+- when timeout -> send endgame to both players (and possibly start a new game)
 
 ```
 c2s: connect <username> \n

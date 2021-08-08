@@ -70,8 +70,8 @@ newModel = Model M.empty S.empty M.empty M.empty [] M.empty
 -- helpers
 -------------------------------------------------------------------------------
 
-addClient :: TVar Model -> User -> WS.Connection -> IO Bool
-addClient modelVar user conn =  atomically $ do
+addClient :: TVar Model -> User -> WS.Connection -> STM Bool
+addClient modelVar user conn = do
     m <- readTVar modelVar
     if M.member user (m^.mClients)
         then return False
@@ -86,8 +86,8 @@ addClient modelVar user conn =  atomically $ do
                 & mUserStats %~ M.insertWith (\_new old -> old) user newUserStats
             return True
 
-delClient :: TVar Model -> User -> IO ()
-delClient modelVar user = atomically $ do
+delClient :: TVar Model -> User -> STM ()
+delClient modelVar user = do
     m <- readTVar modelVar
     let (bs0, bs1) = M.partitionWithKey (\k _ -> userInBattleKey user k) (m^.mBattles)
         insertOpponents = 
@@ -106,8 +106,8 @@ opponent :: User -> BattleKey -> User
 opponent user (userR, userY) = 
     if user == userR then userY else userR
 
-finishBattle :: TVar Model -> BattleKey -> Battle -> P.Board -> G.Status -> IO ()
-finishBattle modelVar b@(userR,userY) bt board status = atomically $ do
+finishBattle :: TVar Model -> BattleKey -> Battle -> P.Board -> G.Status -> STM ()
+finishBattle modelVar b@(userR,userY) bt board status = do
     m <- readTVar modelVar
     let (Battle _ timeR timeY _) = bt
     writeTVar modelVar $ m 
@@ -127,9 +127,9 @@ updateStats PlayerY WinY t us0 = us0 & usWins  +~ 1 & usGames +~ 1 & usTime +~ t
 updateStats PlayerY Tie  t us0 = us0 & usTies  +~ 1 & usGames +~ 1 & usTime +~ t
 updateStats _ _ _ us0 = us0
 
-clearAll :: TVar Model -> IO ()
+clearAll :: TVar Model -> STM ()
 clearAll modelVar =
-    atomically $ modifyTVar' modelVar $ \m -> 
+    modifyTVar' modelVar $ \m -> 
         let cs = m^.mClients
             users = M.keys cs
         in m & mBattles .~ mempty

@@ -6,7 +6,7 @@ import Control.Concurrent (forkIO)
 import Control.Concurrent.STM
 import Data.Maybe (fromMaybe)
 import Network.Wai.Handler.Warp (run)
-import Network.Wai.Middleware.RequestLogger (logStdout)
+-- import Network.Wai.Middleware.RequestLogger (logStdout)
 import System.Environment (lookupEnv)
 
 main :: IO ()
@@ -16,7 +16,7 @@ main = do
     modelVar <- newTVarIO newModel
     _ <- forkIO $ startBattles modelVar
     run port 
-        $ logStdout 
+        -- $ logStdout 
         $ wsApp modelVar
         (httpApp modelVar)
 
