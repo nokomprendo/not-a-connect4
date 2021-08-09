@@ -9,7 +9,6 @@ A client-server application to compare AI playing Connect4.
 ## TODO
 
 gestion playmove atomique dans le serveur
-gestion timeout dans clients
 BotMcTime
 BotMctsTime
 

@@ -161,7 +161,7 @@ deleteTimeout modelVar = do
         return (battles, model)
     let finishWs ((userR, userY), bt, status) = do
             T.putStrLn $ userR <> " vs " <> userY <> " -> " 
-                <> " -> " <> fmtStatus status <> " (timeout)"
+                <> fmtStatus status <> " (by timeout)"
             let connR = (model^.mClients) M.! userR
                 connY = (model^.mClients) M.! userY
                 board = bt^.bBoard
