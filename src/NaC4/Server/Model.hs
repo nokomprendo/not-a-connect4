@@ -21,6 +21,8 @@ import qualified Network.WebSockets as WS
 -- types
 -------------------------------------------------------------------------------
 
+-- TODO Game RealWorld -> Game s ?
+
 data Battle = Battle
     { _bGame        :: Game RealWorld
     , _bBoard       :: P.Board
@@ -111,22 +113,22 @@ findFirstGame m =
         fAcc (Just (k0,a0)) ki ai = if ai<a0 then Just (ki,ai) else Just (k0,a0)
     in fst <$> M.foldlWithKey' fAcc Nothing (fGames $ m^.mNbGames)
 
-checkUser :: User -> Model -> Maybe (User, User, Battle, Game RealWorld)
+checkUser :: User -> Model -> Maybe (BattleKey, Battle)
 checkUser user m1 = do
     let bs = m1^.mBattles & M.filterWithKey (\ k _ -> userInBattleKey user k)
     guard (M.size bs == 1)
-    let ((userR,userY), bt) = M.elemAt 0 bs
+    let (bk@(userR,userY), bt) = M.elemAt 0 bs
         g0 = bt^.bGame
     guard (_currentPlayer g0 == G.PlayerR && user == userR
             || _currentPlayer g0 == G.PlayerY && user == userY)
-    return (userR, userY, bt, g0)
+    return (bk, bt)
 
-updateBattle :: User -> User -> Game RealWorld -> Game RealWorld 
-             -> P.Board -> Double -> Double -> Model -> Model
-updateBattle userR userY g0 g1 b1 time1 time2 m =
-    let f bt = let dt = time1 - bt^.bTimeI
+updateBattle :: BattleKey -> Game RealWorld -> Game RealWorld -> P.Board
+             -> Double -> Double -> Model -> Model
+updateBattle (userR,userY) g0 g1 b1 time penalty m =
+    let f bt = let dt = time - bt^.bTimeI
                in if _currentPlayer g0 == G.PlayerR
-                  then bt & bGame.~g1 & bBoard.~b1 & bTimeI.~time2 & bTimeR+~dt
-                  else bt & bGame.~g1 & bBoard.~b1 & bTimeI.~time2 & bTimeY+~dt
+                  then bt & bGame.~g1 & bBoard.~b1 & bTimeI.~time & bTimeR+~dt+penalty
+                  else bt & bGame.~g1 & bBoard.~b1 & bTimeI.~time & bTimeY+~dt+penalty
     in m & mBattles %~ M.adjust f (userR, userY)
 
