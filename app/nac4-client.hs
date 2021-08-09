@@ -102,9 +102,9 @@ run botFunc conn = do
                     let j = G._moves game U.! k
                     T.putStrLn $ "playmove: " <> T.pack (show j)
                     sendMsg (PlayMove j) conn
-        Just (EndGame b p s) -> do
+        Just (EndGame b p s gs) -> do
             T.putStrLn $ "endgame: " <> b <> " " <> fmtPlayer p <> " "
-                <> fmtStatus s
+                <> fmtStatus s <> " " <> fmtGameStatus gs
             mG <- stToIO (toGame b p s)
             case mG of
                 Nothing -> T.putStrLn "failed to parse game"

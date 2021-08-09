@@ -49,12 +49,13 @@ spec = do
             parseMsgToClient "genmove board Y foo \n" `shouldBe` Nothing
 
         it "endgame 1" $ do
-            parseMsgToClient "endgame board R WinR \n" `shouldBe` Just (EndGame "board" PlayerR WinR)
-            parseMsgToClient "endgame board R WinY \n" `shouldBe` Just (EndGame "board" PlayerR WinY)
-            parseMsgToClient "endgame board Y PlayR \n" `shouldBe` Just (EndGame "board" PlayerY PlayR)
-            parseMsgToClient "endgame board Y PlayY \n" `shouldBe` Just (EndGame "board" PlayerY PlayY)
-            parseMsgToClient "endgame board Y Tie \n" `shouldBe` Just (EndGame "board" PlayerY Tie)
-            parseMsgToClient "endgame board Y foo \n" `shouldBe` Nothing
+            parseMsgToClient "endgame board R WinR Ok \n" `shouldBe` Just (EndGame "board" PlayerR WinR Ok)
+            parseMsgToClient "endgame board R WinY Ok \n" `shouldBe` Just (EndGame "board" PlayerR WinY Ok)
+            parseMsgToClient "endgame board Y PlayR Ok \n" `shouldBe` Just (EndGame "board" PlayerY PlayR Ok)
+            parseMsgToClient "endgame board Y PlayY Timeout \n" `shouldBe` Just (EndGame "board" PlayerY PlayY Timeout)
+            parseMsgToClient "endgame board Y Tie Timeout \n" `shouldBe` Just (EndGame "board" PlayerY Tie Timeout)
+            parseMsgToClient "endgame board Y foo Timeout \n" `shouldBe` Nothing
+            parseMsgToClient "endgame board Y Tie foo \n" `shouldBe` Nothing 
 
     describe "fmtMsgToServer" $ do
 
@@ -83,11 +84,11 @@ spec = do
             fmtMsgToClient (GenMove "board" PlayerY WinR 1.337)`shouldBe` "genmove board Y WinR 1.3 \n"
 
         it "endgame 1" $ do
-            fmtMsgToClient (EndGame "board" PlayerR WinR)`shouldBe` "endgame board R WinR \n"
-            fmtMsgToClient (EndGame "board" PlayerR WinY)`shouldBe` "endgame board R WinY \n"
-            fmtMsgToClient (EndGame "board" PlayerR PlayR)`shouldBe` "endgame board R PlayR \n"
-            fmtMsgToClient (EndGame "board" PlayerY PlayY)`shouldBe` "endgame board Y PlayY \n"
-            fmtMsgToClient (EndGame "board" PlayerY Tie)`shouldBe` "endgame board Y Tie \n"
+            fmtMsgToClient (EndGame "board" PlayerR WinR Ok)`shouldBe` "endgame board R WinR Ok \n"
+            fmtMsgToClient (EndGame "board" PlayerR WinY Ok)`shouldBe` "endgame board R WinY Ok \n"
+            fmtMsgToClient (EndGame "board" PlayerR PlayR Ok)`shouldBe` "endgame board R PlayR Ok \n"
+            fmtMsgToClient (EndGame "board" PlayerY PlayY Timeout)`shouldBe` "endgame board Y PlayY Timeout \n"
+            fmtMsgToClient (EndGame "board" PlayerY Tie Timeout)`shouldBe` "endgame board Y Tie Timeout \n"
 
     describe "fromGame" $ do
 

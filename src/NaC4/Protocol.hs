@@ -19,6 +19,8 @@ type User = T.Text
 type Move = Int
 type Board = T.Text
 
+data GameStatus = Ok | Timeout deriving (Eq, Show)
+
 data MsgToServer
     = Connect User 
     | PlayMove Move
@@ -29,7 +31,7 @@ data MsgToClient
     | NotConnected T.Text
     | NewGame User User
     | GenMove Board G.Player G.Status Double
-    | EndGame Board G.Player G.Status
+    | EndGame Board G.Player G.Status GameStatus
     deriving (Eq, Show)
 
 -------------------------------------------------------------------------------
@@ -49,7 +51,8 @@ parseMsgToClient input = case T.words input of
     ["newgame", pr, py] -> Just $ NewGame pr py 
     ["genmove", b, p, s, t] -> 
         GenMove b <$> parsePlayer p <*> parseStatus s <*> readMaybe (T.unpack t)
-    ["endgame", b, p, s] -> EndGame b <$> parsePlayer p <*> parseStatus s
+    ["endgame", b, p, s, gs] -> 
+        EndGame b <$> parsePlayer p <*> parseStatus s <*> parseGameStatus gs
     _ -> Nothing
 
 parsePlayer :: T.Text -> Maybe G.Player
@@ -65,6 +68,11 @@ parseStatus "PlayR" = Just G.PlayR
 parseStatus "PlayY" = Just G.PlayY
 parseStatus _ = Nothing
 
+parseGameStatus :: T.Text -> Maybe GameStatus
+parseGameStatus "Ok" = Just Ok
+parseGameStatus "Timeout" = Just Timeout
+parseGameStatus _ = Nothing
+
 -------------------------------------------------------------------------------
 -- format message
 -------------------------------------------------------------------------------
@@ -79,7 +87,8 @@ fmtMsgToClient (NotConnected msg) = fmtMsg ["not-connected", msg]
 fmtMsgToClient (NewGame pr py) = fmtMsg ["newgame", pr, py]
 fmtMsgToClient (GenMove b p s t) = 
     fmtMsg ["genmove", b, fmtPlayer p, fmtStatus s, fmtTime t]
-fmtMsgToClient (EndGame b p s) = fmtMsg ["endgame", b, fmtPlayer p, fmtStatus s]
+fmtMsgToClient (EndGame b p s gs) = 
+    fmtMsg ["endgame", b, fmtPlayer p, fmtStatus s, fmtGameStatus gs]
 
 fmtPlayer :: G.Player -> T.Text
 fmtPlayer G.PlayerR = "R"
@@ -97,6 +106,9 @@ fmtTime = T.pack . printf "%.1f"
 
 fmtMsg :: [T.Text] -> T.Text
 fmtMsg xs = T.unwords (xs ++ ["\n"])
+
+fmtGameStatus :: GameStatus -> T.Text
+fmtGameStatus = T.pack . show
 
 -------------------------------------------------------------------------------
 -- to/from Game

@@ -8,6 +8,8 @@ A client-server application to compare AI playing Connect4.
 
 ## TODO
 
+gestion playmove atomique dans le serveur
+gestion timeout dans clients
 BotMcTime
 BotMctsTime
 
@@ -20,6 +22,7 @@ BotMctsTime
 - PLAYER: R | Y
 - MOVE: 0-6                                     ; column to play
 - STATUS: WinR | WinY | Tie | PlayR | PlayY
+- GAMESTATUS: Ok | Timeout
 - invalid move -> cancel current game then terminate
 - disconnection -> cancel current game then terminate
 - s2c/c2s: server-to-client/client-to-server
@@ -34,7 +37,7 @@ s2c: not-connected [error message] \n
 s2c: newgame <user> <user> \n
 s2c: genmove BOARD COLOR <time> \n             ; color of the current player
 c2s: playmove MOVE \n
-s2c: endgame BOARD COLOR STATUS \n
+s2c: endgame BOARD COLOR STATUS GAMESTATUS \n
 ```
 
 ## Deploy server to Heroku

@@ -116,9 +116,9 @@ run modelVar user conn = forever $ do
                     else do
                         atomically $ finishBattle modelVar (userR,userY) bt board status
                         T.putStrLn $ userR <> " vs " <> userY 
-                            <> " -> " <> T.pack (show status)
-                        sendMsg (EndGame board PlayerR status) connR
-                        sendMsg (EndGame board PlayerY status) connY
+                            <> " -> " <> fmtStatus status 
+                        sendMsg (EndGame board PlayerR status P.Ok) connR
+                        sendMsg (EndGame board PlayerY status P.Ok) connY
 
         _ -> putStrLn "unknown message"
 
@@ -161,12 +161,12 @@ deleteTimeout modelVar = do
         return (battles, model)
     let finishWs ((userR, userY), bt, status) = do
             T.putStrLn $ userR <> " vs " <> userY <> " -> " 
-                <> T.pack (show status) <> " (timeout)"
+                <> " -> " <> fmtStatus status <> " (timeout)"
             let connR = (model^.mClients) M.! userR
                 connY = (model^.mClients) M.! userY
                 board = bt^.bBoard
-            sendMsg (EndGame board PlayerR status) connR
-            sendMsg (EndGame board PlayerY status) connY
+            sendMsg (EndGame board PlayerR status Timeout) connR
+            sendMsg (EndGame board PlayerY status Timeout) connY
     mapM_ finishWs battles
 
 startOneGame :: TVar Model -> IO ()
@@ -193,7 +193,8 @@ startOneGame modelVar = do
             (board, _, _) <- stToIO $ fromGame game
             time <- myGetTime
             atomically $ modifyTVar' modelVar
-                (\m -> m & mBattles %~ M.insert (userR,userY) (Battle game board 0 0 time))
+                (\m -> m & mBattles %~ M.insert (userR,userY)
+                                            (Battle game board 0 0 time))
             (b, p, s) <- stToIO $ fromGame game
             sendMsg (GenMove b p s Params.wsBattleTime) clientR
         Nothing -> return ()
