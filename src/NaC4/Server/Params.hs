@@ -8,5 +8,10 @@ wsMaxNbGames = 10
 
 wsBattleTime :: Double
 wsBattleTime = 21.0
--- wsBattleTime = 42.0 -- TODO
+
+wsPenaltyTime :: Double
+wsPenaltyTime = 1.0
+
+wsPenaltyTimeUs :: Int
+wsPenaltyTimeUs = truncate $ 1e6 * wsPenaltyTime
 

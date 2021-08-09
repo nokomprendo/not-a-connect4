@@ -35,7 +35,7 @@ data Game s = Game
     { _status :: Status
     , _currentPlayer :: Player
     , _firstPlayer :: Player
-    , _moves :: (U.Vector Int)
+    , _moves :: U.Vector Int
     , _cells :: Board s
     }
 

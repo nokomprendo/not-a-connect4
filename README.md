@@ -6,12 +6,6 @@ A client-server application to compare AI playing Connect4.
 
 ![](tmp/nac4.gif)
 
-## TODO
-
-gestion playmove atomique dans le serveur
-BotMcTime
-BotMctsTime
-
 ## Network protocol
 
 - using websockets
@@ -27,6 +21,7 @@ BotMctsTime
 - s2c/c2s: server-to-client/client-to-server
 - time: remaining time for the current player (begins with 42.0s per player per battle)
 - when timeout -> send endgame to both players (and possibly start a new game)
+- when invalid move -> 1s ban + new genmove
 
 ```
 c2s: connect <username> \n
@@ -73,12 +68,12 @@ heroku logs --app not-a-connect4
 - using stack:
 
 ```
-stack run nac4-client not-a-connect4.herokuapp.com 80 myname mc 64
+stack run nac4-client not-a-connect4.herokuapp.com 80 player-mc mc 500
 ```
 
 - using nix+cabal:
 
 ```
-nix-shell --run "cabal run nac4-client not-a-connect4.herokuapp.com 80 myname mc 64"
+nix-shell --run "cabal run nac4-client not-a-connect4.herokuapp.com 80 player-mc mc 500"
 ```
 

@@ -69,8 +69,6 @@ clientApp botFunc user conn = do
         Just (NotConnected msg) -> die ("not-connected: " <> T.unpack msg)
         _ -> die "connection failed"
 
--- TODO run genmove in a thread and kill it if recv endgame
-
 run :: TVar Model -> WS.ClientApp ()
 run modelVar conn = do
     msgToClient <- recvMsg conn
@@ -160,7 +158,6 @@ startThread modelVar time game conn = do
     T.putStrLn $ "playmove: " <> T.pack (show j)
     sendMsg (PlayMove j) conn
     atomically $ modifyTVar' modelVar (\m -> m { _mThread = Nothing })
-
 
 -------------------------------------------------------------------------------
 -- game

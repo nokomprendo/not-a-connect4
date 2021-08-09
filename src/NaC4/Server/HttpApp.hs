@@ -12,6 +12,8 @@ import NaC4.Server.View
 import Control.Concurrent.STM
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.Map.Strict as M
+import qualified Data.Set as S
+import Lens.Micro.Platform
 import Servant
 import Servant.HTML.Lucid
 
@@ -55,4 +57,15 @@ handleClear modelVar = liftIO (atomically $ clearAll modelVar) >> return "done"
 
 httpApp :: TVar Model -> Application
 httpApp modelVar = serve (Proxy @ServerApi) (handleServerApi modelVar)
+
+clearAll :: TVar Model -> STM ()
+clearAll modelVar =
+    modifyTVar' modelVar $ \m -> 
+        let cs = m^.mClients
+            users = M.keys cs
+        in m & mBattles .~ mempty
+             & mWaiting .~ S.fromList users
+             & mResults .~ []
+             & mUserStats .~ M.map (const newUserStats) cs
+             & mNbGames .~ M.fromList [((ur,uy), 0) | ur<-users, uy<-users, ur/=uy]
 
