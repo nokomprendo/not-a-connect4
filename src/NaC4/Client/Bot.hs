@@ -6,9 +6,11 @@
 module NaC4.Client.Bot where
 
 import NaC4.Game
+import NaC4.Utils
 
 import qualified Data.Vector.Mutable as M
 
+import Control.Monad.IO.Class (liftIO)
 import Control.Monad
 import Control.Monad.ST
 import Data.STRef
@@ -192,8 +194,35 @@ backpropagate status node = do
     forM_ (nodeParent node) (readSTRef >=> backpropagate status)
 
 ----------------------------------------------------------------------
+-- BotIO
+----------------------------------------------------------------------
+
+class BotIO b where
+    genmoveIO :: b -> Double -> Game RealWorld -> IO Int
+
+instance BotIO (BotRandom RealWorld) where
+    genmoveIO b t g = stToIO (genmove b t g)
+
+instance BotIO (BotMc RealWorld) where
+    genmoveIO b t g = stToIO (genmove b t g)
+
+instance BotIO (BotMcts RealWorld) where
+    genmoveIO b t g = stToIO (genmove b t g)
+
+----------------------------------------------------------------------
 -- TODO BotMcTime
 ----------------------------------------------------------------------
+
+newtype BotMcTimeIO = BotMcTimeIO { mcTimeGen :: GenIO }
+
+instance BotIO BotMcTimeIO where
+    genmoveIO (BotMcTimeIO gen) time game = do
+        t <- myGetTime  -- TODO
+        let aux ki k s = if ki == nMovesGame game then return k else do
+                            si <- evalMove game gen 10 ki
+                            if si>s then aux (ki+1) ki si else aux (ki+1) k s
+        stToIO $ aux 0 0 (-1)
+
 
 ----------------------------------------------------------------------
 -- TODO BotMctsTime

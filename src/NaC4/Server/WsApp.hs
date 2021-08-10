@@ -4,6 +4,7 @@ module NaC4.Server.WsApp (wsApp, wsIdleApp) where
 
 import NaC4.Game as G
 import NaC4.Protocol as P
+import NaC4.Utils
 import NaC4.Server.Model
 import NaC4.Server.Params as Params
 
@@ -16,7 +17,6 @@ import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import qualified Data.Text.IO as T
 import qualified Data.Vector.Unboxed as U
-import Data.Time.Clock.POSIX (getCurrentTime, utcTimeToPOSIXSeconds)
 import Lens.Micro.Platform
 import Network.Wai (Application)
 import Network.Wai.Handler.WebSockets (websocketsOr)
@@ -63,11 +63,6 @@ recvMsg conn = parseMsgToServer . WS.fromLazyByteString <$> WS.receiveData conn
 
 sendMsg :: MsgToClient -> WS.Connection -> IO ()
 sendMsg msg conn = WS.sendTextData conn (fmtMsgToClient msg)
-
-myGetTime :: IO Double
-myGetTime = 
-    let itod = fromIntegral :: Int -> Double
-    in (0.001*) . itod . round <$> ((1000*) . utcTimeToPOSIXSeconds <$> getCurrentTime)
 
 -------------------------------------------------------------------------------
 -- handler

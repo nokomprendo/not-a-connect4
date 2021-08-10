@@ -84,6 +84,8 @@ spec = do
         it "endgame 1" $ do
             fmtMsgToClient (EndGame "board" PlayerR WinR Ok)`shouldBe` "endgame board R WinR Ok\r\n"
             fmtMsgToClient (EndGame "board" PlayerR WinY Ok)`shouldBe` "endgame board R WinY Ok\r\n"
+            fmtMsgToClient (EndGame "board" PlayerR PlayR Ok)`shouldBe` "endgame board R PlayR Ok\r\n"
+            fmtMsgToClient (EndGame "board" PlayerY PlayY Timeout)`shouldBe` "endgame board Y PlayY Timeout\r\n"
             fmtMsgToClient (EndGame "board" PlayerY Tie Timeout)`shouldBe` "endgame board Y Tie Timeout\r\n"
 
     describe "fromGame" $ do

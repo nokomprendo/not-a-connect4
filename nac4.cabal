@@ -37,6 +37,7 @@ library
 
     exposed-modules:    NaC4.Game
                         NaC4.Protocol
+                        NaC4.Utils
                         NaC4.Client.Bot
                         NaC4.Server.HttpApp
                         NaC4.Server.Model

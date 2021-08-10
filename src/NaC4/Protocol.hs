@@ -19,7 +19,8 @@ type User = T.Text
 type Move = Int
 type Board = T.Text
 
-data BattleStatus = Ok | Timeout | Aborted deriving (Eq, Show)
+data BattleStatus = Ok | Timeout deriving (Eq, Show)
+    -- TODO Disconnected
 
 data MsgToServer
     = Connect User 
@@ -64,14 +65,14 @@ parseStatus :: T.Text -> Maybe G.Status
 parseStatus "WinR" = Just G.WinR
 parseStatus "WinY" = Just G.WinY
 parseStatus "Tie" = Just G.Tie
+parseStatus "PlayR" = Just G.PlayR
+parseStatus "PlayY" = Just G.PlayY
 parseStatus _ = Nothing
 
 parseBattleStatus :: T.Text -> Maybe BattleStatus
 parseBattleStatus "Ok" = Just Ok
 parseBattleStatus "Timeout" = Just Timeout
-parseBattleStatus "Aborted" = Just Aborted
 parseBattleStatus _ = Nothing
--- parseBattleStatus = readMaybe . show
 
 -------------------------------------------------------------------------------
 -- format message
@@ -98,7 +99,8 @@ fmtStatus :: G.Status -> T.Text
 fmtStatus G.WinR = "WinR"
 fmtStatus G.WinY = "WinY"
 fmtStatus G.Tie = "Tie"
-fmtStatus _ = ""
+fmtStatus G.PlayR = "PlayR"
+fmtStatus G.PlayY = "PlayY"
 
 fmtTime :: Double -> T.Text
 fmtTime = T.pack . printf "%.1f"

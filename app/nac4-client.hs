@@ -50,6 +50,7 @@ usage = do
     putStrLn ""
     putStrLn "bots: "
     putStrLn "  random"
+    putStrLn "  mctime"
     putStrLn "  mc <nsim>"
     putStrLn "  mcts <nsims>"
 
@@ -131,6 +132,7 @@ mkBotFunc _ = return Nothing
 data Model = Model
     { _mThread :: Maybe ThreadId
     , _mFunc :: BotFunc
+    -- BotIO
     }
 
 mkModel :: BotFunc -> Model

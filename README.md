@@ -71,7 +71,7 @@ message-notconnected    = "not-connected" [SP info] CRLF
 
 message-newgame         = "newgame" SP user SP user CRLF    
 
-message-genmove         = "genmove" SP board SP color SP time CRLF
+message-genmove         = "genmove" SP board SP color SP status SP time CRLF
 
 message-playmove        = "playmove" SP move CRLF
 
@@ -90,9 +90,8 @@ time            = *DIGIT "." DIGIT
 
 move            = "0" / "1" / "2" / "3" / "4" / "5" / "6"   ; column index
 
-status          = "WinR" / "WinY" / "Tie"
+status          = "WinR" / "WinY" / "Tie" / "PlayR" / "PlayY"
 
-battlestatus    = "Ok" / "Timeout" / "Aborted"
+battlestatus    = "Ok" / "Timeout" / "Disconnected"
 ```
-
 
