@@ -86,10 +86,10 @@ run modelVar conn = do
                     stopThread modelVar
                     void $ forkIO $ startThread modelVar t game conn
 
-        Just (EndGame b p s gs) -> do
+        Just (EndGame b p s bs) -> do
             stopThread modelVar
             T.putStrLn $ "endgame: " <> b <> " " <> fmtPlayer p <> " "
-                <> fmtStatus s <> " " <> fmtGameStatus gs
+                <> fmtStatus s <> " " <> fmtBattleStatus bs
             mG <- stToIO (toGame b p s)
             case mG of
                 Nothing -> T.putStrLn "failed to parse game"
