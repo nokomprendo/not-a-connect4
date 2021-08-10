@@ -1,4 +1,3 @@
-{-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module NaC4.Server.WsApp (wsApp, wsIdleApp) where
@@ -33,7 +32,7 @@ wsIdleApp :: TVar Model -> IO ()
 wsIdleApp modelVar = forever $ do
     deleteTimeout modelVar
     startOneGame modelVar
-    threadDelay 500_000
+    threadDelay Params.wsIdleDelay
 
 wsApp :: TVar Model -> Application -> Application
 wsApp modelVar = websocketsOr WS.defaultConnectionOptions (serverApp modelVar)
@@ -218,6 +217,7 @@ deleteClient modelVar user = do
     else writeTVar modelVar $ model & mClients %~ M.delete user
                                     & mWaiting %~ insertOpponents bs0
                                     & mBattles .~ bs1
+    -- TODO: finish battle (user lose)
 
 finishBattle :: TVar Model -> BattleKey -> Battle -> G.Status -> STM ()
 finishBattle modelVar b@(userR,userY) bt status = do

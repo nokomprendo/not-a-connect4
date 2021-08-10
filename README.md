@@ -68,12 +68,12 @@ heroku logs --app not-a-connect4
 - using stack:
 
 ```
-stack run nac4-client not-a-connect4.herokuapp.com 80 player-mc mc 500
+stack run nac4-client not-a-connect4.herokuapp.com 80 player-mc mc 10000
 ```
 
 - using nix+cabal:
 
 ```
-nix-shell --run "cabal run nac4-client not-a-connect4.herokuapp.com 80 player-mc mc 500"
+nix-shell --run "cabal run nac4-client not-a-connect4.herokuapp.com 80 player-mc mc 10000"
 ```
 

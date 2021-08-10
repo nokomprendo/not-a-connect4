@@ -64,8 +64,6 @@ parseStatus :: T.Text -> Maybe G.Status
 parseStatus "WinR" = Just G.WinR
 parseStatus "WinY" = Just G.WinY
 parseStatus "Tie" = Just G.Tie
-parseStatus "PlayR" = Just G.PlayR
-parseStatus "PlayY" = Just G.PlayY
 parseStatus _ = Nothing
 
 parseGameStatus :: T.Text -> Maybe GameStatus
@@ -98,14 +96,13 @@ fmtStatus :: G.Status -> T.Text
 fmtStatus G.WinR = "WinR"
 fmtStatus G.WinY = "WinY"
 fmtStatus G.Tie = "Tie"
-fmtStatus G.PlayR = "PlayR"
-fmtStatus G.PlayY = "PlayY"
+fmtStatus _ = ""
 
 fmtTime :: Double -> T.Text
 fmtTime = T.pack . printf "%.1f"
 
 fmtMsg :: [T.Text] -> T.Text
-fmtMsg xs = T.unwords (xs ++ ["\n"])
+fmtMsg xs = T.unwords xs <> "\r\n"
 
 fmtGameStatus :: GameStatus -> T.Text
 fmtGameStatus = T.pack . show
