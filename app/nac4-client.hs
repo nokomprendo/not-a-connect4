@@ -123,6 +123,7 @@ parseMyBot :: [String] -> IO (Maybe MyBot)
 parseMyBot ["random"] = Just . MyBotRandom . BotRandom <$> createSystemRandom
 parseMyBot ["zero"] = Just . MyBotRandom . BotRandom <$> createSystemRandom
 parseMyBot ["mctime"] = Just . MyBotMcTime . BotMcTimeIO <$> createSystemRandom
+parseMyBot ["mctstime"] = Just . MyBotMctsTime . BotMctsTimeIO <$> createSystemRandom
 parseMyBot ["mc", nsimsStr] = do
     gen <- createSystemRandom
     return $ do

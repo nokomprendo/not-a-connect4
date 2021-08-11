@@ -8,15 +8,10 @@ module NaC4.Client.Bot where
 import NaC4.Game
 import NaC4.Utils
 
-import qualified Data.Massiv.Array as A
--- import qualified Data.Massiv.Array.Mutable as A
--- import qualified Data.Massiv.Vector as A
-
-import qualified Data.Vector.Mutable as VM  -- TODO use massiv ?
-import qualified Data.Vector as V
-
 import Control.Monad
 import Control.Monad.ST
+import qualified Data.Massiv.Array as A
+import qualified Data.Vector.Mutable as VM  -- TODO use massiv ?
 import Data.STRef
 import System.Random.MWC
 
@@ -210,7 +205,7 @@ computeEmptyCells game =
     in A.foldlS f 0 <$> A.freezeS (_cells game)
 
 ----------------------------------------------------------------------
--- BotMcTime
+-- BotMcTimeIO
 ----------------------------------------------------------------------
 
 newtype BotMcTimeIO = BotMcTimeIO GenIO
@@ -235,15 +230,16 @@ instance BotIO BotMcTimeIO where
         -- compute scores incrementally
         let loop :: Int -> IO Int
             loop n = do
-                replicateM_ 100 $ VM.iforM_ scores $ \k (s, g) -> do
+                replicateM_ 1000 $ VM.iforM_ scores $ \k (s, g) -> do
                     status <- stToIO (cloneGame g >>= playoutRandom gen)
                     let sk = computeScore player0 status
                     VM.write scores k (sk+s, g)
                 t <- myGetTime
                 if t < t1 then loop (n+1) else return n
+
         n <- loop 0
-        putStrLn $ "  loop: " <> show n
-        putStrLn $ "  time: " <> show tcell
+        putStrLn $ "  mc loop: " <> show n
+        putStrLn $ "  mc time: " <> show tcell
 
         -- find best score 
         s0 <- fst <$> VM.read scores 0
@@ -251,19 +247,35 @@ instance BotIO BotMcTimeIO where
         snd <$> VM.ifoldl' bestFunc (s0, 0) scores
 
 ----------------------------------------------------------------------
--- BotMctsTime
+-- BotMctsTimeIO
 ----------------------------------------------------------------------
 
 newtype BotMctsTimeIO = BotMctsTimeIO GenIO
 
 instance BotIO BotMctsTimeIO where
-    genmoveIO (BotMctsTimeIO gen) time game = stToIO $ do
-        --TODO
-        root <- mkRoot game 
-        replicateM_ 42 $ do
-            leaf <- selectAndExpand root
-            status <- simulate gen leaf
-            backpropagate status leaf
-        bestNode root
+    genmoveIO (BotMctsTimeIO gen) time game = do
+        t0 <- myGetTime
+        emptyCells <- stToIO $ computeEmptyCells game
+        let ktime = if time < 5.0 then 1.0 else 4.0  -- TODO params 
+            tcell = ktime * time / fromIntegral emptyCells
+            t1 = t0 + tcell - 0.5 
 
+        root <- stToIO $ mkRoot game 
+
+        let loop :: Int -> IO Int
+            loop n = do
+
+                stToIO $ replicateM_ 1000 $ do
+                    leaf <- selectAndExpand root
+                    status <- simulate gen leaf
+                    backpropagate status leaf
+
+                t <- myGetTime
+                if t < t1 then loop (n+1) else return n
+
+        n <- loop 0
+        putStrLn $ "  mcts loop: " <> show n
+        putStrLn $ "  mcts time: " <> show tcell
+
+        stToIO $ bestNode root
 

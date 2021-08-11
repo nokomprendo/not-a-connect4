@@ -95,3 +95,7 @@ status          = "WinR" / "WinY" / "Tie" / "PlayR" / "PlayY"
 battlestatus    = "Ok" / "Timeout" / "Disconnected"
 ```
 
+## TODO
+
+- store result when disconnection
+

@@ -6,7 +6,7 @@ viewNbResults :: Int
 viewNbResults = 20
 
 wsBattleTime :: Double
-wsBattleTime = 21.0  -- TODO 42.0
+wsBattleTime = 10.0
 
 wsIdleDelay :: Int
 wsIdleDelay = 500_000
