@@ -30,12 +30,12 @@ main = do
     args <- getArgs
     case args of
         (host:portStr:user:botArgs) -> do
-            mBotFunc <- mkBotFunc botArgs
+            mMyBot <- parseMyBot botArgs
             let mPort = readMaybe portStr
-            case (mBotFunc, mPort) of
-                (Just botFunc, Just port) -> withSocketsDo 
+            case (mMyBot, mPort) of
+                (Just myBot, Just port) -> withSocketsDo 
                     $ WS.runClient host port "" 
-                    $ clientApp botFunc (T.pack user)
+                    $ clientApp myBot (T.pack user)
                 _ -> usage
         _ -> usage
 
@@ -50,7 +50,9 @@ usage = do
     putStrLn ""
     putStrLn "bots: "
     putStrLn "  random"
+    putStrLn "  zero"
     putStrLn "  mctime"
+    putStrLn "  mctstime"
     putStrLn "  mc <nsim>"
     putStrLn "  mcts <nsims>"
 
@@ -58,14 +60,14 @@ usage = do
 -- network
 -------------------------------------------------------------------------------
 
-clientApp :: BotFunc -> User -> WS.ClientApp ()
-clientApp botFunc user conn = do
+clientApp :: MyBot -> User -> WS.ClientApp ()
+clientApp myBot user conn = do
     sendMsg (Connect user) conn
     msgToClient <- recvMsg conn
     case msgToClient of
         Just (Connected msg) -> do
             T.putStrLn $ "connected: " <> msg
-            modelVar <- newTVarIO (mkModel botFunc)
+            modelVar <- newTVarIO (mkModel myBot)
             run modelVar conn
         Just (NotConnected msg) -> die ("not-connected: " <> T.unpack msg)
         _ -> die "connection failed"
@@ -106,24 +108,40 @@ sendMsg :: MsgToServer -> WS.ClientApp ()
 sendMsg msg conn = WS.sendTextData conn $ fmtMsgToServer msg
 
 -------------------------------------------------------------------------------
--- bot
+-- MyBot
 -------------------------------------------------------------------------------
 
-type BotFunc = Double -> G.Game RealWorld -> ST RealWorld Int
+data MyBot
+    = MyBotRandom (BotRandom RealWorld)
+    | MyBotMc (BotMc RealWorld)
+    | MyBotMcts (BotMcts RealWorld)
+    | MyBotZero BotZero
+    | MyBotMcTime BotMcTimeIO
+    | MyBotMctsTime BotMctsTimeIO
 
-mkBotFunc :: [String] -> IO (Maybe BotFunc)
-mkBotFunc ["random"] = Just . genmove . BotRandom <$> createSystemRandom
-mkBotFunc ["mc", nsimsStr] = do
+parseMyBot :: [String] -> IO (Maybe MyBot)
+parseMyBot ["random"] = Just . MyBotRandom . BotRandom <$> createSystemRandom
+parseMyBot ["zero"] = Just . MyBotRandom . BotRandom <$> createSystemRandom
+parseMyBot ["mctime"] = Just . MyBotMcTime . BotMcTimeIO <$> createSystemRandom
+parseMyBot ["mc", nsimsStr] = do
     gen <- createSystemRandom
     return $ do
         nsims <- readMaybe nsimsStr
-        Just (genmove $ BotMc nsims gen)
-mkBotFunc ["mcts", nsimsStr] = do
+        Just $ MyBotMc $ BotMc nsims gen
+parseMyBot ["mcts", nsimsStr] = do
     gen <- createSystemRandom
     return $ do
         nsims <- readMaybe nsimsStr
-        Just (genmove $ BotMcts nsims gen)
-mkBotFunc _ = return Nothing
+        Just $ MyBotMcts $ BotMcts nsims gen
+parseMyBot _ = return Nothing
+
+myGenmove :: MyBot -> Double -> G.Game RealWorld -> IO Int
+myGenmove (MyBotRandom b) t g = stToIO $ genmove b t g
+myGenmove (MyBotMc b) t g = stToIO $ genmove b t g
+myGenmove (MyBotMcts b) t g = stToIO $ genmove b t g
+myGenmove (MyBotZero b) t g = stToIO $ genmove b t g
+myGenmove (MyBotMcTime b) t g = genmoveIO b t g
+myGenmove (MyBotMctsTime b) t g = genmoveIO b t g
 
 -------------------------------------------------------------------------------
 -- model
@@ -131,11 +149,10 @@ mkBotFunc _ = return Nothing
 
 data Model = Model
     { _mThread :: Maybe ThreadId
-    , _mFunc :: BotFunc
-    -- BotIO
+    , _mBot :: MyBot
     }
 
-mkModel :: BotFunc -> Model
+mkModel :: MyBot -> Model
 mkModel = Model Nothing 
 
 stopThread :: TVar Model -> IO ()
@@ -151,11 +168,11 @@ stopThread modelVar = do
 startThread :: TVar Model -> Double -> G.Game RealWorld -> WS.Connection -> IO ()
 startThread modelVar time game conn = do
     threadId <- myThreadId
-    func <- atomically $ do
+    myBot <- atomically $ do
         model <- readTVar modelVar
         writeTVar modelVar model { _mThread = Just threadId }
-        return $ _mFunc model
-    k <- stToIO $ func time game
+        return $ _mBot model
+    k <- myGenmove myBot time game
     let j = G._moves game U.! k
     T.putStrLn $ "playmove: " <> T.pack (show j)
     sendMsg (PlayMove j) conn

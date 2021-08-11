@@ -8,9 +8,10 @@ module NaC4.Client.Bot where
 import NaC4.Game
 import NaC4.Utils
 
+import qualified Data.Massiv.Array as A
+import qualified Data.Massiv.Array.Mutable as A
 import qualified Data.Vector.Mutable as M
 
-import Control.Monad.IO.Class (liftIO)
 import Control.Monad
 import Control.Monad.ST
 import Data.STRef
@@ -200,20 +201,16 @@ backpropagate status node = do
 class BotIO b where
     genmoveIO :: b -> Double -> Game RealWorld -> IO Int
 
-instance BotIO (BotRandom RealWorld) where
-    genmoveIO b t g = stToIO (genmove b t g)
-
-instance BotIO (BotMc RealWorld) where
-    genmoveIO b t g = stToIO (genmove b t g)
-
-instance BotIO (BotMcts RealWorld) where
-    genmoveIO b t g = stToIO (genmove b t g)
+emptyCells :: Game s -> ST s Int
+emptyCells game = 
+    let f acc x = if x==CellE then acc+1 else acc
+    in A.foldlS f 0 <$> A.freezeS (_cells game)
 
 ----------------------------------------------------------------------
--- TODO BotMcTime
+-- BotMcTime
 ----------------------------------------------------------------------
 
-newtype BotMcTimeIO = BotMcTimeIO { mcTimeGen :: GenIO }
+newtype BotMcTimeIO = BotMcTimeIO GenIO
 
 instance BotIO BotMcTimeIO where
     genmoveIO (BotMcTimeIO gen) time game = do
@@ -223,8 +220,20 @@ instance BotIO BotMcTimeIO where
                             if si>s then aux (ki+1) ki si else aux (ki+1) k s
         stToIO $ aux 0 0 (-1)
 
+----------------------------------------------------------------------
+-- BotMctsTime
+----------------------------------------------------------------------
 
-----------------------------------------------------------------------
--- TODO BotMctsTime
-----------------------------------------------------------------------
+newtype BotMctsTimeIO = BotMctsTimeIO GenIO
+
+instance BotIO BotMctsTimeIO where
+    genmoveIO (BotMctsTimeIO gen) time game = stToIO $ do
+        --TODO
+        root <- mkRoot game 
+        replicateM_ 42 $ do
+            leaf <- selectAndExpand root
+            status <- simulate gen leaf
+            backpropagate status leaf
+        bestNode root
+
 
