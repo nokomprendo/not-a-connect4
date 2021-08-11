@@ -36,12 +36,12 @@ library
     hs-source-dirs:     src
 
     exposed-modules:    NaC4.Game
+                        NaC4.Params
                         NaC4.Protocol
                         NaC4.Utils
                         NaC4.Client.Bot
                         NaC4.Server.HttpApp
                         NaC4.Server.Model
-                        NaC4.Server.Params
                         NaC4.Server.View
                         NaC4.Server.WsApp
 

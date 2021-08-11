@@ -8,7 +8,7 @@
 
 module NaC4.Server.View where
 
-import qualified NaC4.Server.Params as Params
+import qualified NaC4.Params as Params
 
 import qualified Data.Aeson as A
 import qualified Data.Text as T
@@ -232,7 +232,7 @@ descResults =
         "color": {
           "aggregate": "mean", 
           "field": "score",
-          "scale": {"scheme": "plasma"}
+          "scale": {"scheme": "plasma", "domainMin": 0, "domainMax": 1 }
         }
       },
       "transform": [

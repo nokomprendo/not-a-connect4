@@ -1,6 +1,6 @@
 {-# LANGUAGE NumericUnderscores #-}
 
-module NaC4.Server.Params where
+module NaC4.Params where
 
 viewNbResults :: Int
 viewNbResults = 20

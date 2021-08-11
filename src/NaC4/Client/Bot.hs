@@ -13,6 +13,7 @@ import qualified Data.Massiv.Array as A
 -- import qualified Data.Massiv.Vector as A
 
 import qualified Data.Vector.Mutable as VM  -- TODO use massiv ?
+import qualified Data.Vector as V
 
 import Control.Monad
 import Control.Monad.ST
@@ -218,9 +219,9 @@ instance BotIO BotMcTimeIO where
     genmoveIO (BotMcTimeIO gen) time game = do
         t0 <- myGetTime
         emptyCells <- stToIO $ computeEmptyCells game
-        let tcell = time / fromIntegral emptyCells
-            ktime = if time < 5.0 then 1.0 else 2.0  -- TODO params 
-            t1 = t0 + ktime*tcell - 0.5 
+        let ktime = if time < 5.0 then 1.0 else 4.0  -- TODO params 
+            tcell = ktime * time / fromIntegral emptyCells
+            t1 = t0 + tcell - 0.5 
             nmoves = nMovesGame game
             player0 = _currentPlayer game
 
@@ -232,18 +233,22 @@ instance BotIO BotMcTimeIO where
         scores <- VM.generateM nmoves genFunc
 
         -- compute scores incrementally
-        VM.forM_ scores $ \(s, g) -> stToIO $ do
-            status <- cloneGame g >>= playoutRandom gen
-            let sk = computeScore player0 status
-            return (sk+s, g)
-        -- TODO 10 sims
-        -- TODO while time
+        let loop :: Int -> IO Int
+            loop n = do
+                replicateM_ 100 $ VM.iforM_ scores $ \k (s, g) -> do
+                    status <- stToIO (cloneGame g >>= playoutRandom gen)
+                    let sk = computeScore player0 status
+                    VM.write scores k (sk+s, g)
+                t <- myGetTime
+                if t < t1 then loop (n+1) else return n
+        n <- loop 0
+        putStrLn $ "  loop: " <> show n
+        putStrLn $ "  time: " <> show tcell
 
         -- find best score 
         s0 <- fst <$> VM.read scores 0
-        let bestFunc (bs, bk) k (s, _) = 
-                return (if s>bs then (s,k) else (bs, bk))
-        snd <$> VM.ifoldM bestFunc (s0, 0) scores
+        let bestFunc (bs, bk) k (s, _) = if s>bs then (s,k) else (bs, bk)
+        snd <$> VM.ifoldl' bestFunc (s0, 0) scores
 
 ----------------------------------------------------------------------
 -- BotMctsTime

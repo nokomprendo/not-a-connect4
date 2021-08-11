@@ -6,7 +6,7 @@ import NaC4.Game as G
 import NaC4.Protocol as P
 import NaC4.Utils
 import NaC4.Server.Model
-import NaC4.Server.Params as Params
+import NaC4.Params as Params
 
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.STM

@@ -5,8 +5,8 @@
 module NaC4.Server.Model where
 
 import NaC4.Game as G
+import NaC4.Params as Params
 import NaC4.Protocol as P
-import NaC4.Server.Params as Params
 
 import Control.Monad (guard)
 import Control.Monad.ST (RealWorld)
