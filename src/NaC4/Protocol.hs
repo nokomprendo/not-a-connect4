@@ -7,7 +7,6 @@ import qualified NaC4.Game as G
 import Control.Monad.ST
 import qualified Data.Massiv.Array as A
 import qualified Data.Text as T
-import qualified Data.Vector.Unboxed as U
 import Text.Printf (printf)
 import Text.Read (readMaybe)
 
@@ -141,5 +140,5 @@ toGame b p s
             bb = go [] (map parseCell $ T.unpack b)
         arr <- A.thawS (A.fromLists' A.Seq bb)
         let moves = [ j | (x,j) <- zip (last bb) [0..], x==G.CellE ]
-        return $ Just $ G.Game s p p (U.fromList moves) arr
+        return $ Just $ G.Game s p p (A.fromList A.Seq moves) arr
 

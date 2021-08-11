@@ -2,7 +2,6 @@ module NaC4.GameSpec (main, spec) where
 
 import Control.Monad.ST
 import Data.Massiv.Array 
-import Data.Vector.Unboxed as U
 import Test.Hspec
 
 import NaC4.Game
@@ -20,14 +19,14 @@ spec = do
             _firstPlayer g `shouldBe` PlayerR
             _status g `shouldBe` PlayR
             _currentPlayer g `shouldBe` PlayerR
-            _moves g `shouldBe` U.fromList [0 .. 6]
+            _moves g `shouldBe` fromList Seq [0 .. 6]
 
         it "nextGame 1" $ do
             g <- stToIO (mkGame PlayerR >>= nextGame)
             _status g `shouldBe` PlayY
             _firstPlayer g `shouldBe` PlayerY
             _currentPlayer g `shouldBe` PlayerY
-            _moves g `shouldBe` U.fromList [0 .. 6]
+            _moves g `shouldBe` fromList Seq [0 .. 6]
 
     describe "lineLength" $ do
 
@@ -59,7 +58,7 @@ spec = do
             _status g `shouldBe` PlayY
             _firstPlayer g `shouldBe` PlayerR
             _currentPlayer g `shouldBe` PlayerY
-            _moves g `shouldBe` U.fromList [0 .. 6]
+            _moves g `shouldBe` fromList Seq [0 .. 6]
 
         it "playK 2" $ do
             g <- stToIO (mkGame PlayerR 
@@ -72,7 +71,7 @@ spec = do
             _status g `shouldBe` PlayR
             _firstPlayer g `shouldBe` PlayerR
             _currentPlayer g `shouldBe` PlayerR
-            _moves g `shouldBe` U.fromList [0 .. 5]
+            _moves g `shouldBe` fromList Seq [0 .. 5]
 
         it "playK 3" $ do
             g <- stToIO (mkGame PlayerR 
@@ -83,5 +82,5 @@ spec = do
             _status g `shouldBe` WinR
             _firstPlayer g `shouldBe` PlayerR
             _currentPlayer g `shouldBe` PlayerR
-            _moves g `shouldBe` U.fromList [0 .. 6]
+            _moves g `shouldBe` fromList Seq [0 .. 6]
 

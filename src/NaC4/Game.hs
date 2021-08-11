@@ -4,11 +4,12 @@
 module NaC4.Game where
 
 import Control.Monad.ST
-import qualified Data.Vector.Unboxed as U
+-- import qualified Data.Vector.Unboxed as U  -- TODO use Massiv ?
 
 import Data.Aeson
 import Data.Massiv.Array
 import Data.Massiv.Array.Unsafe
+import Data.Massiv.Vector
 import GHC.Generics
 
 nI, nJ :: Int
@@ -35,7 +36,7 @@ data Game s = Game
     { _status :: Status
     , _currentPlayer :: Player
     , _firstPlayer :: Player
-    , _moves :: U.Vector Int
+    , _moves :: Vector U Int
     , _cells :: Board s
     }
 
@@ -58,7 +59,7 @@ checkLine i0 j0 di dj c0 cs = do
 mkGame :: Player -> ST s (Game s)
 mkGame p = 
     let status = if p == PlayerR then PlayR else PlayY
-    in Game status p p (U.fromList [0 .. nJ-1]) <$> newMArray (Sz2 nI nJ) CellE
+    in Game status p p (fromList Seq [0 .. nJ-1]) <$> newMArray (Sz2 nI nJ) CellE
 
 cloneGame :: Game s -> ST s (Game s)
 cloneGame game0 = do
@@ -69,7 +70,7 @@ nextGame :: Game s -> ST s (Game s)
 nextGame g0 = mkGame (nextPlayer $ _firstPlayer g0)
 
 playK :: Int -> Game s -> ST s (Game s)
-playK k g@(Game _ _ _ ms _) = playJ (ms U.! k) g
+playK k g@(Game _ _ _ ms _) = playJ (ms ! k) g
 
 playJ :: Int -> Game s -> ST s (Game s)
 playJ j0 g@(Game _ cp _ ms cs) = do
@@ -82,14 +83,14 @@ playJ j0 g@(Game _ cp _ ms cs) = do
     i0 <- findI nI
     let c0 = player2Cell cp
     writeM cs (Ix2 i0 j0) c0
-    let ms1 = if i0/=(nI-1) then ms else U.filter (/=j0) ms
+    let ms1 = if i0/=(nI-1) then ms else compute $ sfilter (/=j0) ms
 
     -- update status/current/moves
     resRow <- checkLine i0 j0 0 1 c0 cs
     resCol <- checkLine i0 j0 1 0 c0 cs
     resDiag1 <- checkLine i0 j0 1 1 c0 cs
     resDiag2 <- checkLine i0 j0 1 (-1) c0 cs
-    return $ case (resRow||resCol||resDiag1||resDiag2, U.null ms1) of
+    return $ case (resRow||resCol||resDiag1||resDiag2, snull ms1) of
         (True, _) -> g { _status = if cp==PlayerR then WinR else WinY
                        , _moves = ms1 }
         (_, True) -> g { _status = Tie, _moves = ms1 }
@@ -101,5 +102,5 @@ isRunning :: Game s -> Bool
 isRunning (Game status _ _ _ _) = status == PlayR || status == PlayY
 
 nMovesGame :: Game s -> Int
-nMovesGame = U.length . _moves
+nMovesGame g = let Just (Sz1 n) = slength (_moves g) in n
 

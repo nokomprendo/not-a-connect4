@@ -19,18 +19,18 @@ spec = do
 
     describe "BotIO" $ do
 
-        it "emptyCells 1" $ do
+        it "computeEmptyCells 1" $ do
             n <- stToIO $ mkGame PlayerR
-                        >>= emptyCells
+                        >>= computeEmptyCells
             n`shouldBe` 42
 
-        it "emptyCells 1" $ do
+        it "computeEmptyCells 1" $ do
             n <- stToIO $ mkGame PlayerR
                         >>= playK 2
                         >>= playK 4
                         >>= playK 2
                         >>= playK 2
-                        >>= emptyCells
+                        >>= computeEmptyCells
             n`shouldBe` 38
 
     describe "BotZero" $ do

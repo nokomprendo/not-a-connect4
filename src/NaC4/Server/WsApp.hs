@@ -14,9 +14,9 @@ import Control.Exception (finally)
 import Control.Monad (forever, guard, join)
 import Control.Monad.ST (stToIO)
 import qualified Data.Map.Strict as M
+import qualified Data.Massiv.Array as A
 import qualified Data.Set as S
 import qualified Data.Text.IO as T
-import qualified Data.Vector.Unboxed as U
 import Lens.Micro.Platform
 import Network.Wai (Application)
 import Network.Wai.Handler.WebSockets (websocketsOr)
@@ -92,7 +92,7 @@ handlePlaymove modelVar user j = do
         Nothing -> T.putStrLn $ "invalid playmove from " <> user
         Just (bk, bt) -> do
             let game0 = bt^.bGame
-            if j `U.notElem` G._moves game0 
+            if not $ A.elem j $ G._moves game0 
             then do
                 let board = bt^.bBoard
                 T.putStrLn $ "invalid move from " <> user

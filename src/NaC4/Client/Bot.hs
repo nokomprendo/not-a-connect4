@@ -9,8 +9,10 @@ import NaC4.Game
 import NaC4.Utils
 
 import qualified Data.Massiv.Array as A
-import qualified Data.Massiv.Array.Mutable as A
-import qualified Data.Vector.Mutable as M
+-- import qualified Data.Massiv.Array.Mutable as A
+import qualified Data.Massiv.Vector as A
+
+import qualified Data.Vector.Mutable as M  -- TODO use massiv ?
 
 import Control.Monad
 import Control.Monad.ST
@@ -201,8 +203,8 @@ backpropagate status node = do
 class BotIO b where
     genmoveIO :: b -> Double -> Game RealWorld -> IO Int
 
-emptyCells :: Game s -> ST s Int
-emptyCells game = 
+computeEmptyCells :: Game s -> ST s Int
+computeEmptyCells game = 
     let f acc x = if x==CellE then acc+1 else acc
     in A.foldlS f 0 <$> A.freezeS (_cells game)
 
@@ -214,11 +216,25 @@ newtype BotMcTimeIO = BotMcTimeIO GenIO
 
 instance BotIO BotMcTimeIO where
     genmoveIO (BotMcTimeIO gen) time game = do
-        t <- myGetTime  -- TODO
-        let aux ki k s = if ki == nMovesGame game then return k else do
-                            si <- evalMove game gen 10 ki
-                            if si>s then aux (ki+1) ki si else aux (ki+1) k s
-        stToIO $ aux 0 0 (-1)
+        t0 <- myGetTime
+        emptyCells <- stToIO $ computeEmptyCells game
+        let tcell = time / fromIntegral emptyCells
+            ktime = if time < 5.0 then 1.0 else 2.0  -- TODO params 
+            t1 = t0 + ktime*tcell - 0.5 
+            size = A.Sz1 $ nMovesGame game
+
+        -- create a vector for computing scores
+        let genFunc k = stToIO $ do
+                g1 <- cloneGame game
+                playK k g1
+                return (0, g1)
+        scores <- A.sgenerateM size genFunc 
+
+        -- compute scores incrementally
+
+        -- find best score 
+
+        return 0
 
 ----------------------------------------------------------------------
 -- BotMctsTime

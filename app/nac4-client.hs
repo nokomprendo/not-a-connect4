@@ -10,10 +10,9 @@ import Control.Concurrent.STM
 import Control.Monad (void)
 import Control.Monad.ST
 import Data.Foldable (forM_)
-import Data.Massiv.Array hiding (map, reverse, forM_)
+import qualified Data.Massiv.Array as A
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import qualified Data.Vector.Unboxed as U
 import Network.Socket (withSocketsDo)
 import qualified Network.WebSockets as WS
 import System.Random.MWC
@@ -173,7 +172,7 @@ startThread modelVar time game conn = do
         writeTVar modelVar model { _mThread = Just threadId }
         return $ _mBot model
     k <- myGenmove myBot time game
-    let j = G._moves game U.! k
+    let j = G._moves game A.! k
     T.putStrLn $ "playmove: " <> T.pack (show j)
     sendMsg (PlayMove j) conn
     atomically $ modifyTVar' modelVar (\m -> m { _mThread = Nothing })
@@ -189,6 +188,6 @@ formatCell G.CellY = "Y"
 
 showGame :: G.Game s -> ST s T.Text
 showGame g = 
-    T.unlines . map (T.concat . map formatCell) . reverse . toLists2 
-        <$> freezeS (G._cells g)
+    T.unlines . map (T.concat . map formatCell) . reverse . A.toLists2 
+        <$> A.freezeS (G._cells g)
 
