@@ -4,12 +4,9 @@
 module NaC4.Game where
 
 import Control.Monad.ST
--- import qualified Data.Vector.Unboxed as U  -- TODO use Massiv ?
-
 import Data.Aeson
 import Data.Massiv.Array
 import Data.Massiv.Array.Unsafe
-import Data.Massiv.Vector
 import GHC.Generics
 
 nI, nJ :: Int
@@ -101,6 +98,9 @@ playJ j0 g@(Game _ cp _ ms cs) = do
 isRunning :: Game s -> Bool
 isRunning (Game status _ _ _ _) = status == PlayR || status == PlayY
 
+sMovesGame :: Game s -> Sz1
+sMovesGame = size . _moves
+
 nMovesGame :: Game s -> Int
-nMovesGame g = let Just (Sz1 n) = slength (_moves g) in n
+nMovesGame = unSz . sMovesGame
 

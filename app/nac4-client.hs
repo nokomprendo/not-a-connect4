@@ -4,6 +4,7 @@
 import NaC4.Client.Bot
 import qualified NaC4.Game as G
 import NaC4.Protocol
+import NaC4.Utils
 
 import Control.Concurrent
 import Control.Concurrent.STM
@@ -176,18 +177,4 @@ startThread modelVar time game conn = do
     T.putStrLn $ "playmove: " <> T.pack (show j)
     sendMsg (PlayMove j) conn
     atomically $ modifyTVar' modelVar (\m -> m { _mThread = Nothing })
-
--------------------------------------------------------------------------------
--- game
--------------------------------------------------------------------------------
-
-formatCell :: G.Cell -> T.Text
-formatCell G.CellE = "."
-formatCell G.CellR = "R"
-formatCell G.CellY = "Y"
-
-showGame :: G.Game s -> ST s T.Text
-showGame g = 
-    T.unlines . map (T.concat . map formatCell) . reverse . A.toLists2 
-        <$> A.freezeS (G._cells g)
 

@@ -10,9 +10,9 @@ import NaC4.Utils
 
 import qualified Data.Massiv.Array as A
 -- import qualified Data.Massiv.Array.Mutable as A
-import qualified Data.Massiv.Vector as A
+-- import qualified Data.Massiv.Vector as A
 
-import qualified Data.Vector.Mutable as M  -- TODO use massiv ?
+import qualified Data.Vector.Mutable as VM  -- TODO use massiv ?
 
 import Control.Monad
 import Control.Monad.ST
@@ -125,7 +125,7 @@ data Node s = Node
     , nodeReward :: STRef s Double 
     , nodeNsims :: STRef s Int
     , nodeLastI :: STRef s Int
-    , nodeChildren :: M.STVector s (Node s)
+    , nodeChildren :: VM.STVector s (Node s)
     }
 
 mkRoot :: Game s -> ST s (Node s)
@@ -142,7 +142,7 @@ mkNode gameFunc pNode game0 = do
     let nMoves = nMovesGame game1
         player0 = _currentPlayer game0
     Node game1 player0 nMoves pNode 
-        <$> newSTRef 0 <*> newSTRef 0 <*> newSTRef 0 <*> M.new nMoves
+        <$> newSTRef 0 <*> newSTRef 0 <*> newSTRef 0 <*> VM.new nMoves
 
 bestNode :: Node s -> ST s Int
 bestNode root = do
@@ -151,7 +151,7 @@ bestNode root = do
     let bestNodeFunc (nn,ii) i node = do
             nsims <- readSTRef (nodeNsims node)
             return $ if nsims > nn then (nsims, i) else (nn, ii)
-    snd <$> M.ifoldM' bestNodeFunc (-1, -1) (nodeChildren root)
+    snd <$> VM.ifoldM' bestNodeFunc (-1, -1) (nodeChildren root)
 
 ucb1 :: Double -> Int -> Int -> Double
 ucb1 cReward cNsims pNsims =
@@ -169,8 +169,8 @@ selectUcb node = do
             nsims <- readSTRef (nodeNsims n)
             let si = ucb1 reward nsims pNsims 
             return $ if si > sk then (si, i) else (sk, k)
-    (_, k) <- M.ifoldM' bestUcb1Func (-1, -1) children 
-    M.read children k
+    (_, k) <- VM.ifoldM' bestUcb1Func (-1, -1) children 
+    VM.read children k
 
 selectAndExpand :: Node s -> ST s (Node s)
 selectAndExpand node = 
@@ -181,7 +181,7 @@ selectAndExpand node =
         then do
             nodeRef <- newSTRef node
             cNode <- mkLeaf lastI nodeRef
-            M.write (nodeChildren node) lastI cNode
+            VM.write (nodeChildren node) lastI cNode
             modifySTRef' (nodeLastI node) (+1)
             return cNode
         else selectUcb node >>= selectAndExpand 
@@ -221,20 +221,29 @@ instance BotIO BotMcTimeIO where
         let tcell = time / fromIntegral emptyCells
             ktime = if time < 5.0 then 1.0 else 2.0  -- TODO params 
             t1 = t0 + ktime*tcell - 0.5 
-            size = A.Sz1 $ nMovesGame game
+            nmoves = nMovesGame game
+            player0 = _currentPlayer game
 
         -- create a vector for computing scores
-        let genFunc k = stToIO $ do
-                g1 <- cloneGame game
-                playK k g1
+        let genFunc :: Int -> IO (Double, Game RealWorld)
+            genFunc k = stToIO $ do
+                g1 <- cloneGame game >>= playK k
                 return (0, g1)
-        scores <- A.sgenerateM size genFunc 
+        scores <- VM.generateM nmoves genFunc
 
         -- compute scores incrementally
+        VM.forM_ scores $ \(s, g) -> stToIO $ do
+            status <- cloneGame g >>= playoutRandom gen
+            let sk = computeScore player0 status
+            return (sk+s, g)
+        -- TODO 10 sims
+        -- TODO while time
 
         -- find best score 
-
-        return 0
+        s0 <- fst <$> VM.read scores 0
+        let bestFunc (bs, bk) k (s, _) = 
+                return (if s>bs then (s,k) else (bs, bk))
+        snd <$> VM.ifoldM bestFunc (s0, 0) scores
 
 ----------------------------------------------------------------------
 -- BotMctsTime
